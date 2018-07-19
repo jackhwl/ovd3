@@ -30,7 +30,15 @@ nv.models.dialChart = function() {
             console.log('dialChart 0d=', d);
             //console.log('0width=', width);
             //console.log('0height=', height);
-            // console.log('0margin', margin);
+			// console.log('0margin', margin);
+			
+			if (d.length===0) {
+				nv.utils.noData(chart, container);
+				return chart;
+			}else {
+                container.selectAll('.nv-noData').remove();
+            }
+		
 
             var availableWidth = nv.utils.availableWidth(width, container, margin),
                 availableHeight = nv.utils.availableHeight(height, container, margin), //height - margin.top - margin.bottom,
@@ -163,4 +171,3 @@ nv.models.dialChart = function() {
 
     return chart;
 };
-
