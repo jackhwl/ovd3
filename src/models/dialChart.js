@@ -6,6 +6,7 @@ nv.models.dialChart = function() {
     //------------------------------------------------------------
 
     var dial = nv.models.dial();
+    var tooltip = nv.models.tooltip();
 
     var margin = {top: 5, right: 40, bottom: 20, left: 120}
 	, id = function(d) { return d.id }
@@ -20,7 +21,12 @@ nv.models.dialChart = function() {
         , pivot =  function(d) { return d.pivot }
 		, caption =  function(d) { return d.caption }
 		, palette = function(d) { return d.palette }
+        , dispatch = d3.dispatch()
         ;
+
+    tooltip
+        .duration(0)
+        .headerEnabled(false);
 
     function chart(selection) {
 		//console.log('p0Height=', height);
@@ -107,10 +113,33 @@ nv.models.dialChart = function() {
     }
 
     //============================================================
+    // Event Handling/Dispatching (out of chart's scope)
+    //------------------------------------------------------------
+
+    dial.dispatch.on('elementMouseover.tooltip', function(evt) {
+        evt['series'] = {
+            key: evt.label,
+            value: evt.value,
+            color: evt.color
+        };
+        tooltip.data(evt).hidden(false);
+    });
+
+    dial.dispatch.on('elementMouseout.tooltip', function(evt) {
+        tooltip.hidden(true);
+    });
+
+    dial.dispatch.on('elementMousemove.tooltip', function(evt) {
+        tooltip();
+    });
+    
+    //============================================================
     // Expose Public Variables
     //------------------------------------------------------------
 
     chart.dial = dial;
+    chart.dispatch = dispatch;
+    chart.tooltip = tooltip;
 
     chart.options = nv.utils.optionsFunc.bind(chart);
 
