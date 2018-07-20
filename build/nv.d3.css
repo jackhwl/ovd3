@@ -1,4 +1,4 @@
-/* nvd3 version 1.8.6-dev (https://github.com/novus/nvd3) 2018-07-16 */
+/* nvd3 version 1.8.6-dev (https://github.com/novus/nvd3) 2018-07-19 */
 .nvd3 .nv-axis {
     pointer-events:none;
     opacity: 1;
@@ -156,6 +156,22 @@
 .nvd3.nv-candlestickBar .nv-ticks line {
     stroke: #333;
 }
+
+.nvd3.nv-dial circle.label {
+    fill: white;
+    display: inline;
+}
+  
+.nvd3.nv-dial   line.label {
+    stroke: white;
+    stroke-width: 1px;
+    display: inline;
+}
+  
+.nvd3.nv-dial line.mlabel {
+    stroke-width: 2px;
+}
+  
 
 .nv-force-node {
     stroke: #fff;

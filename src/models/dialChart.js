@@ -8,7 +8,8 @@ nv.models.dialChart = function() {
     var dial = nv.models.dial();
 
     var margin = {top: 5, right: 40, bottom: 20, left: 120}
-        , ranges = function(d) { return d.ranges }
+	, id = function(d) { return d.id }
+	, ranges = function(d) { return d.ranges }
         , measures = function(d) { return d.measures }
         , width = null
         , height = null
@@ -27,7 +28,6 @@ nv.models.dialChart = function() {
         selection.each(function(d, i) {
             var container = d3.select(this);
             nv.utils.initSVG(container);
-            console.log('dialChart 0d=', d);
             //console.log('0width=', width);
             //console.log('0height=', height);
 			// console.log('0margin', margin);
@@ -91,8 +91,8 @@ nv.models.dialChart = function() {
             //     .attr('class', 'nv-subtitle')
             //     .attr('dy', '1em')
             //     .text(function(d) { return d.subtitle; });
-			console.log(availableWidth);
-			console.log(availableHeight);
+			//console.log(availableWidth);
+			//console.log(availableHeight);
             dial
                 .width(availableWidth)
                 .height(availableHeight);
@@ -116,6 +116,7 @@ nv.models.dialChart = function() {
 
     chart._options = Object.create({}, {
         // simple options, just get/set the necessary values
+        id:      {get: function(){return id;}, set: function(_){id=_;}}, // ranges (bad, satisfactory, good)
         ranges:      {get: function(){return ranges;}, set: function(_){ranges=_;}}, // ranges (bad, satisfactory, good)
         measures: {get: function(){return measures;}, set: function(_){measures=_;}}, // measures (actual, forecast)
         width:    {get: function(){return width;}, set: function(_){width=_;}},

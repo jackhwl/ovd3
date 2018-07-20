@@ -1,4 +1,3 @@
-
 nv.models.dial = function() {
   "use strict";
 
@@ -8,6 +7,7 @@ nv.models.dial = function() {
 
   var margin = {top: 0, right: 0, bottom: 0, left: 0}
       , bgColor = '#031732'
+      , id = function(d) { return d.id }
       , ranges = function(d) { return d.ranges }
       , measures = function(d) { return d.measures }
       , rangeLabels = function(d) { return d.rangeLabels ? d.rangeLabels : [] }
@@ -40,11 +40,10 @@ nv.models.dial = function() {
       , needle =  function(d) { return d.needle }
       ;
 
-  console.log('palette=', palette);
-  console.log('scaleDomain=', scaleDomain);
+  //console.log('palette=', palette);
+  //console.log('scaleDomain=', scaleDomain);
   function chart(selection) {
       selection.each(function(data, i) {
-    console.log('888888888888data=', data);
     var d = data[0];
           var availableWidth = width - margin.left - margin.right,
               availableHeight = height - margin.top - margin.bottom,
@@ -59,13 +58,13 @@ nv.models.dial = function() {
       a.percentageFormat = d.scale.text.format.indexOf('%')>0;
       a.measurePercentageFormat = d.caption[0].format.indexOf('%')>0;
       
-      console.log('a=', a);
-      console.log('a0=', a0);
-      console.log('calDomain=', calDomain);
-      console.log('scaleDomain=', d.scaleDomain);
+      // console.log('a=', a);
+      // console.log('a0=', a0);
+      // console.log('calDomain=', calDomain);
+      // console.log('scaleDomain=', d.scaleDomain);
 
           var r = Math.min(wm / 2, hm / 2);
-    console.log('r=',r);
+    //console.log('r=',r);
           // Setup containers and skeleton of chart
           container.selectAll('g.nv-wrap.nv-dial').remove();
           var wrap = container.selectAll('g.nv-wrap.nv-dial').data([d]);
@@ -79,9 +78,9 @@ nv.models.dial = function() {
 
           wrap.attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
 
-          drawCaption();
           createDefs();
           drawRim();
+          drawCaption();
           drawScale();
           drawGlare();
           drawNeedle();
@@ -128,7 +127,7 @@ nv.models.dial = function() {
                       .attr("d", line)
                       //.attr("transform", "translate(" + (r + padding) + ", " + (r + padding) + ")")
           ;
-        console.log('d.palette.rim=',d.palette.rim);
+        //console.log('d.palette.rim=',d.palette.rim);
                   var color = d3.interpolate(d.palette.rim[0], d.palette.rim[1]);
         
                   var path = gRim.select("path").remove();
@@ -144,16 +143,16 @@ nv.models.dial = function() {
                   //face
                   gRim.append('svg:circle')
                     .attr('r', r * d.scale.dial.outer)
-                    .style('fill', 'url(#outerGradient)')
-                    .attr('filter', 'url(#dropShadow)');
+                    .style('fill', 'url(#outerGradient'+d.id+')')
+                    .attr('filter', 'url(#dropShadow'+d.id+')');
         
                   gRim.append('svg:circle')
                     .attr('r', r * d.scale.dial.middle)
-                    .style('fill', 'url(#innerGradient)');
+                    .style('fill', 'url(#innerGradient'+d.id+')');
         
                   gRim.append('svg:circle')
                     .attr('r', r * d.scale.dial.inner)
-                    .style('fill', 'url(#faceGradient)');
+                    .style('fill', 'url(#faceGradient'+d.id+')');
                 }
         
                 // Sample the SVG path uniformly with the specified precision.
@@ -248,8 +247,8 @@ nv.models.dial = function() {
               var majorRange = d.tick.exact ? [major[0], d.scaleDomain[1]] : [major[0], major[major.length-1]];
       var scaleDomainUpper = scaleDomain(d)[1];
 
-      console.log('major=', major);
-      console.log('majorRange=', majorRange);
+      // console.log('major=', major);
+      // console.log('majorRange=', majorRange);
       gScale.selectAll('text.label')
                 .data(d.needle.type>0 ? majorRange : major)
                 .enter().append('svg:text')
@@ -272,8 +271,8 @@ nv.models.dial = function() {
                     .data(minor)
                   .enter().append('svg:circle')
                     .attr('class', 'label')
-                    .attr('cx', function(d0) { return Math.cos( (-90 + a(d0)) / 180 * Math.PI) * (r * d.scale.text.position); })
-                    .attr('cy', function(d0) { return Math.sin( (-90 + a(d0)) / 180 * Math.PI) * (r * d.scale.text.position); })
+                    .attr('cx', function(d0) { return Math.cos( (-90 + a(d0)) / 180 * Math.PI) * (r * d.scale.position.start); })
+                    .attr('cy', function(d0) { return Math.sin( (-90 + a(d0)) / 180 * Math.PI) * (r * d.scale.position.start); })
                     .attr('r', 2);
               }
         
@@ -417,7 +416,7 @@ nv.models.dial = function() {
                   .attr('stop-opacity', '1');
         
               var outerGradient = defs.append('svg:linearGradient')
-                .attr('id', 'outerGradient')
+                .attr('id', 'outerGradient'+d.id)
                 .attr('x1', '0%').attr('y1', '0%')
                 .attr('x2', '0%').attr('y2', '100%')
                 .attr('spreadMethod', 'pad');
@@ -430,7 +429,7 @@ nv.models.dial = function() {
                   .attr('stop-opacity', '1');
         
               var innerGradient = defs.append('svg:linearGradient')
-                .attr('id', 'innerGradient')
+                .attr('id', 'innerGradient'+d.id)
                 .attr('x1', '0%').attr('y1', '0%')
                 .attr('x2', '0%').attr('y2', '100%')
                 .attr('spreadMethod', 'pad');
@@ -443,13 +442,13 @@ nv.models.dial = function() {
                   .attr('stop-opacity', '1');
         
               var faceGradient = defs.append('svg:linearGradient')
-                .attr('id', 'faceGradient')
+                .attr('id', 'faceGradient'+d.id)
                 .attr('x1', '0%').attr('y1', '0%')
                 .attr('x2', '0%').attr('y2', '100%')
                 .attr('spreadMethod', 'pad');
         
               faceGradient.selectAll('stop')
-                  .data([{ o: '0%', c: '#000000' }, { o: '100%', c: '#494949' }])
+                  .data([{ o: '0%', c: d.scale.dial.face[0] }, { o: '100%', c: d.scale.dial.face[1] }])
                 .enter().append('svg:stop')
                   .attr('offset', function(d) { return d.o; })
                   .attr('stop-color', function(d) { return d.c; })
@@ -469,7 +468,7 @@ nv.models.dial = function() {
                   .attr('stop-opacity', function(d) { return d.op; });
         
               var dropShadowFilter = defs.append('svg:filter')
-                .attr('id', 'dropShadow');
+                .attr('id', 'dropShadow'+d.id);
               dropShadowFilter.append('svg:feGaussianBlur')
                 .attr('in', 'SourceAlpha')
                 .attr('stdDeviation', 3);
@@ -490,11 +489,11 @@ nv.models.dial = function() {
               var gNeedle = needleNodes.enter().append('g').attr("class", "needle");
 
               var n = gNeedle
-                .attr('filter', 'url(#dropShadow)')
+                .attr('filter', 'url(#dropShadow'+d.id+')')
                 .attr('transform', function(d) { return 'rotate(' + a0(d.caption[0].text) + ')'; })
                 ;
 
-      if (d.needle.type>0) {
+				if (d.needle.type>0) {
                   if (d.needle.type===1) {
                     n.append('svg:line')
                     .attr('class', 'needle')
@@ -516,21 +515,21 @@ nv.models.dial = function() {
                   ;
               } else {
                 n.append('svg:path')
-                  .attr('d', 'M ' + (-r * d.needle.width) + ',0 L0,' + (-r * d.needle.length)+ ' L' + r * d.needle.width + ',0')
+				  .attr('d', 'M ' + (-r * d.needle.width) + ',' + (-r * d.needle.start) + ' L0,' + (-r * d.needle.length)+ ' L' + r * d.needle.width + ',' + (-r * d.needle.start))
                   .attr('fill', d.palette.needle);
         
                 n.append('svg:circle')
                   .attr('r', r * d.pivot[0])
-                  .style('fill', 'url(#outerGradient)');
+                  .style('fill', 'url(#outerGradient'+d.id+')');
         
                 n.append('svg:circle')
                   .attr('r', r * d.pivot[1])
-                  .style('fill', 'url(#innerGradient)');
+                  .style('fill', 'url(#innerGradient'+d.id+')');
               }
         
-          }
+		  }
+		  
           function drawCaption() {
-            if (d.needle.type>0) {
               g.selectAll('text').remove();
               g.selectAll('text')
                 .data(d.caption)
@@ -542,7 +541,6 @@ nv.models.dial = function() {
                   'style': function(d){return 'font-family: '+d.family+';font-size: '+(r * d.size * d.scale)+'px;font-weight: '+d.weight+';fill: '+d.color+';alignment-baseline: middle;text-anchor: middle;'}
                 })
                 ;
-            }
     }
     function isNumeric(n) {
       return !isNaN(parseFloat(n)) && isFinite(n);
@@ -561,6 +559,7 @@ nv.models.dial = function() {
 
   chart._options = Object.create({}, {
       // simple options, just get/set the necessary values
+      id:      {get: function(){return id;}, set: function(_){id=_;}}, 
       ranges:      {get: function(){return ranges;}, set: function(_){ranges=_;}}, // ranges (bad, satisfactory, good)
       measures: {get: function(){return measures;}, set: function(_){measures=_;}}, // measures (actual, forecast)
       forceX:      {get: function(){return forceX;}, set: function(_){forceX=_;}},
