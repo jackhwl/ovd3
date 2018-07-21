@@ -15,23 +15,29 @@ nv.models.dialChart = function() {
         , width = null
         , height = null
         , tickFormat = null
-        , ticks = null
+		, ticks = null
+		, duration = 1000
         , noData = null
         , needle = {type: 1, length: 0.75, width: 0.05}
         , pivot =  function(d) { return d.pivot }
 		, caption =  function(d) { return d.caption }
 		, palette = function(d) { return d.palette }
-        , dispatch = d3.dispatch()
+        , dispatch = d3.dispatch('stateChange', 'changeState','renderEnd')
         ;
 
     tooltip
         .duration(0)
         .headerEnabled(false);
 
-    function chart(selection) {
+		var renderWatch = nv.utils.renderWatch(dispatch);
+
+	function chart(selection) {
 		//console.log('p0Height=', height);
         //console.log('selection=', selection);
-        selection.each(function(d, i) {
+        renderWatch.reset();
+        renderWatch.models(dial);
+
+		selection.each(function(d, i) {
             var container = d3.select(this);
             nv.utils.initSVG(container);
             //console.log('0width=', width);
@@ -109,6 +115,7 @@ nv.models.dialChart = function() {
         });
 
         d3.timer.flush();
+        renderWatch.renderEnd('dialChart immediate');
         return chart;
     }
 
@@ -137,11 +144,16 @@ nv.models.dialChart = function() {
     // Expose Public Variables
     //------------------------------------------------------------
 
+//console.log('chart=', chart);
+//console.log('dispatch=', dispatch);
+//console.log('dial=', dial);
+	chart.dispatch = dispatch;
     chart.dial = dial;
-    chart.dispatch = dispatch;
     chart.tooltip = tooltip;
+	//console.log('chart1=', chart);
 
     chart.options = nv.utils.optionsFunc.bind(chart);
+	//console.log('chart2=', chart);
 
     chart._options = Object.create({}, {
         // simple options, just get/set the necessary values
@@ -164,6 +176,11 @@ nv.models.dialChart = function() {
         caption: {get: function(){return caption;}, set: function(_){caption=_;}},
 
         // options that require extra logic in the setter
+        duration: {get: function(){return duration;}, set: function(_){
+            duration = _;
+            renderWatch.reset(duration);
+            dial.duration(duration);
+        }},
         margin: {get: function(){return margin;}, set: function(_){
             margin.top    = _.top    !== undefined ? _.top    : margin.top;
             margin.right  = _.right  !== undefined ? _.right  : margin.right;
@@ -193,9 +210,9 @@ nv.models.dialChart = function() {
           scale.text    = _.text    !== undefined ? _.text    : scale.text;
           scale.position    = _.position    !== undefined ? _.position    : scale.position;
           scale.rim    = _.rim    !== undefined ? _.rim    : scale.rim;
-        }},
+        }}
     });
-
+	//console.log('dial=', dial);
     nv.utils.inheritOptions(chart, dial);
     nv.utils.initOptions(chart);
 

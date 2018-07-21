@@ -38,12 +38,15 @@ nv.models.dial = function () {
     , pivot = function (d) { return d.pivot }
     , tick = function (d) { return d.tick }
     , needle = function (d) { return d.needle }
-    , dispatch = d3.dispatch('elementMouseover', 'elementMouseout', 'elementMousemove')
+    , dispatch = d3.dispatch('chartClick', 'elementMouseover', 'elementMouseout', 'elementMousemove', 'renderEnd')
     ;
 
+  var renderWatch = nv.utils.renderWatch(dispatch);
   //console.log('palette=', palette);
   //console.log('scaleDomain=', scaleDomain);
   function chart(selection) {
+  //console.log('selection=', selection);
+  renderWatch.reset();
     selection.each(function (data, i) {
       var d = data[0];
       var availableWidth = width - margin.left - margin.right,
@@ -78,6 +81,14 @@ nv.models.dial = function () {
       var g = wrap.selectAll('.nv-dail-nodes');
 
       wrap.attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+      container.on('click', function(d,i) {
+        dispatch.chartClick({
+            data: d,
+            index: i,
+            pos: d3.event,
+            id: id
+        });
+      });
 
       createDefs();
       drawRim();
@@ -590,6 +601,7 @@ nv.models.dial = function () {
 
     });
 
+	renderWatch.renderEnd('dial immediate');
     return chart;
   }
 
@@ -609,7 +621,9 @@ nv.models.dial = function () {
     width: { get: function () { return width; }, set: function (_) { width = _; } },
     height: { get: function () { return height; }, set: function (_) { height = _; } },
     tickFormat: { get: function () { return tickFormat; }, set: function (_) { tickFormat = _; } },
-    duration: { get: function () { return duration; }, set: function (_) { duration = _; } },
+	duration: { get: function () { return duration; }, set: function (_) { duration = _; 
+		renderWatch.reset(duration);
+	} },
 
     x: { get: function () { return x; }, set: function (_) { x = _; } },
     y: { get: function () { return y; }, set: function (_) { y = _; } },
