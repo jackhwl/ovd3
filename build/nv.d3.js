@@ -1,4 +1,4 @@
-/* nvd3 version 1.8.6-dev (https://github.com/novus/nvd3) 2018-07-21 */
+/* nvd3 version 1.8.6 (https://github.com/novus/nvd3) 2018-07-22 */
 (function(){
 
 // set up main nv object
@@ -783,14 +783,14 @@ nv.models.tooltip = function() {
             // Create new tooltip div if it doesn't exist on DOM.
 
             var data = [1];
-            tooltip = d3.select(document.body).selectAll('#'+id).data(data);
+            tooltip = d3.select(document.body).select('#'+id).data(data);
 
             tooltip.enter().append('div')
                    .attr("class", "nvtooltip " + (classes ? classes : "xy-tooltip"))
                    .attr("id", id)
                    .style("top", 0).style("left", 0)
                    .style('opacity', 0)
-                   .style('position', 'absolute')
+                   .style('position', 'fixed')
                    .selectAll("div, table, td, tr").classed(nvPointerEventsClass, true)
                    .classed(nvPointerEventsClass, true);
 
@@ -1330,32 +1330,11 @@ nv.utils.calcTicksX = function(numTicks, data) {
 
 
 /*
- returns number of ticks to actually use on Y axis, based on chart data
- */
-nv.utils.calcTicksY = function(numTicks, data, getY) {
-    if (getY) {
-        var numValues = 1;
-        for (var i=0; i < data.length; i += 1) {
-            var values = data[i] && data[i].values ? data[i].values : [];
-            var maxValue;
-            for (var j=0; j < values.length; j += 1) {
-                maxValue = values[j] && getY(values[j]) ? getY(values[j]): 0;
-                numValues = maxValue > numValues ? maxValue : numValues;
-            }
-        }
-        nv.log("Requested number of ticks: ", numTicks);
-        nv.log("Calculated max values to be: ", numValues);
-        // make sure we don't have more ticks than values to avoid duplicates
-        numTicks = numTicks > numValues ? numValues - 1 : numTicks;
-        // make sure we have at least one tick
-        numTicks = numTicks < 1 ? 1 : numTicks;
-        // make sure it's an integer
-        numTicks = Math.floor(numTicks);
-        nv.log("Calculating tick count as: ", numTicks);
-        return numTicks;
-    } else {
-        return nv.utils.calcTicksX(numTicks, data);
-    }
+returns number of ticks to actually use on Y axis, based on chart data
+*/
+nv.utils.calcTicksY = function(numTicks, data) {
+    // currently uses the same logic but we can adjust here if needed later
+    return nv.utils.calcTicksX(numTicks, data);
 };
 
 
@@ -1712,7 +1691,6 @@ nv.models.axis = function() {
             var w;
             switch (axis.orient()) {
                 case 'top':
-                    xLabelMargin = axisLabelDistance + 36;
                     axisLabel.enter().append('text').attr('class', 'nv-axislabel');
                   w = 0;
                   if (scale.range().length === 1) {
@@ -1724,7 +1702,7 @@ nv.models.axis = function() {
                   };
                     axisLabel
                         .attr('text-anchor', 'middle')
-                        .attr('y', -xLabelMargin)
+                        .attr('y', 0)
                         .attr('x', w/2);
                     if (showMaxMin) {
                         axisMaxMin = wrap.selectAll('g.nv-axisMaxMin')
@@ -4091,7 +4069,28 @@ nv.models.dial = function () {
             pos: d3.event,
             id: id
         });
-      });
+	  })
+	  .on('mouseover', function () {
+		dispatch.elementMouseover({
+		  value: d.caption[0].text,
+		  label: d.caption[1].text,
+		  color: d.set == 0 ? d.gradient.face[0].color : d.gradient.rim[1].color
+		})
+	  })
+	  .on('mousemove', function () {
+		dispatch.elementMousemove({
+		  value: d.caption[0].text,
+		  label: d.caption[1].text,
+		  color: d.set == 0 ? d.gradient.face[0].color : d.gradient.rim[1].color
+		})
+	  })
+	  .on('mouseout', function () {
+		dispatch.elementMouseout({
+		  value: d.caption[0].text,
+		  label: d.caption[1].text,
+		  color: d.set == 0 ? d.gradient.face[0].color : d.gradient.rim[1].color
+		})
+	  });
 
       createDefs();
       drawRim();
@@ -4105,29 +4104,8 @@ nv.models.dial = function () {
         g.selectAll('.rim').remove();
         //gRim = g.append('svg:g').attr('class', 'rim');
         var rimNodes = g.selectAll('.rim').data([d]);
-        var gRim = rimNodes.enter().append('g').attr("class", "rim")
-          .on('mouseover', function () {
-            dispatch.elementMouseover({
-              value: d.caption[0].text,
-              label: d.caption[1].text,
-              color: d.needle.type == 0 ? d.scale.dial.face[0] : d.palette.rim[1]
-            })
-          })
-          .on('mousemove', function () {
-            dispatch.elementMousemove({
-              value: d.caption[0].text,
-              label: d.caption[1].text,
-              color: d.needle.type == 0 ? d.scale.dial.face[0] : d.palette.rim[1]
-            })
-          })
-          .on('mouseout', function () {
-            dispatch.elementMouseout({
-              value: d.caption[0].text,
-              label: d.caption[1].text,
-              color: d.needle.type == 0 ? d.scale.dial.face[0] : d.palette.rim[1]
-            })
-          });
-        if (d.needle.type > 0) {
+        var gRim = rimNodes.enter().append('g').attr("class", "rim");
+        if (d.set > 0) {
           //scale gradient arc
           // var arc = d3.svg.arc()
           //     .innerRadius(r* scale.position.end-35)
@@ -4150,7 +4128,7 @@ nv.models.dial = function () {
           var line = d3.svg.line.radial()
             .interpolate("basis")
             .tension(0)
-            .radius(r * d.scale.position.end - 2 - (r * d.scale.rim / 2))
+            .radius(r * d.tick.position.end - 2 - (r * d.scale.rim / 2))
             .angle(function (d, i) { return angle(i); });
 
           // var svg = d3.select("body").append("svg")
@@ -4163,8 +4141,7 @@ nv.models.dial = function () {
             .attr("d", line)
             //.attr("transform", "translate(" + (r + padding) + ", " + (r + padding) + ")")
             ;
-          //console.log('d.palette.rim=',d.palette.rim);
-          var color = d3.interpolate(d.palette.rim[0], d.palette.rim[1]);
+          var color = d3.interpolate(d.gradient.rim[0].color, d.gradient.rim[1].color);
 
           var path = gRim.select("path").remove();
           gRim.selectAll("path")
@@ -4258,17 +4235,17 @@ nv.models.dial = function () {
         var scaleNodes = g.selectAll('.scale').data([d]);
         var gScale = scaleNodes.enter().append('g').attr("class", "scale");
 
-        if (d.needle.type > 0) {
+        if (d.set > 0) {
           //scale arc thin rim
           var arc = d3.svg.arc()
-            .innerRadius(r * d.scale.position.end - 2)
-            .outerRadius(r * d.scale.position.end + 1)
+            .innerRadius(r * d.tick.position.end - 2)
+            .outerRadius(r * d.tick.position.end + 1)
             .startAngle(range(d)[0] * (Math.PI / 180)) //converting from degs to radians
             .endAngle(range(d)[1] * (Math.PI / 180)); //just radians
 
           gScale.append("path")
             .attr("d", arc)
-            .attr("fill", d.palette.scale)
+			.attr("fill", d.tick.color);
         }
 
         // var tick0 = 10;
@@ -4286,7 +4263,7 @@ nv.models.dial = function () {
         // console.log('major=', major);
         // console.log('majorRange=', majorRange);
         gScale.selectAll('text.label')
-          .data(d.needle.type > 0 ? majorRange : major)
+          .data(d.set > 0 ? majorRange : major)
           .enter().append('svg:text')
           .attr({
             'x': function (d0) { return Math.cos((-90 + a((d.tick.exact ? d0 / scaleDomainUpper * major[major.length - 1] : d0))) / 180 * Math.PI) * r * d.scale.text.position; },
@@ -4299,7 +4276,7 @@ nv.models.dial = function () {
             'alignment-baseline': 'middle',
             'text-anchor': 'middle',
           })
-          .text(function (d0) { return a.percentageFormat ? d3.format(d.scale.text.format)(d0 > 0 ? 1 : 0) : (d.scale.text.format == '' ? a.tickFormat()(d0) : d3.format(d.scale.text.format)(d0)); })
+          .text(function (d0) { return a.percentageFormat ? d3.format(d.scale.text.format)(d.set > 0 ? (d0 > 0 ? 1 : 0): (d0/d.scaleDomain[1])) : (d.scale.text.format == '' ? a.tickFormat()(d0) : d3.format(d.scale.text.format)(d0)); })
           ;
 
         if (d.tick.mark == 'circle') {
@@ -4307,42 +4284,42 @@ nv.models.dial = function () {
             .data(minor)
             .enter().append('svg:circle')
             .attr('class', 'mlabel')
-			.attr('fill', d.palette.scale)
-            .attr('cx', function (d0) { return Math.cos((-90 + a(d0)) / 180 * Math.PI) * (r * d.scale.position.start); })
-            .attr('cy', function (d0) { return Math.sin((-90 + a(d0)) / 180 * Math.PI) * (r * d.scale.position.start); })
-            .attr('r', d.scale.position.end-d.scale.position.start);
+			.attr('fill', d.tick.color)
+            .attr('cx', function (d0) { return Math.cos((-90 + a(d0)) / 180 * Math.PI) * (r * d.tick.position.start); })
+            .attr('cy', function (d0) { return Math.sin((-90 + a(d0)) / 180 * Math.PI) * (r * d.tick.position.start); })
+            .attr('r', d.tick.position.end-d.tick.position.start);
         }
 
         if (d.tick.mark == 'line') {
-          if (d.needle.type > 0) {
+          if (d.set > 0) {
             gScale.selectAll('line.label')
               .data(minor)
               .enter().append('svg:line')
               .attr('class', 'mlabel')
-              .attr('stroke', d.palette.scale)
-              .attr('x1', function (d0) { return Math.cos((-90 + a(d0)) / 180 * Math.PI) * (r * (d.scale.position.start + 0.01)); })
-              .attr('y1', function (d0) { return Math.sin((-90 + a(d0)) / 180 * Math.PI) * (r * (d.scale.position.start + 0.01)); })
-              .attr('x2', function (d0) { return Math.cos((-90 + a(d0)) / 180 * Math.PI) * (r * d.scale.position.end); })
-              .attr('y2', function (d0) { return Math.sin((-90 + a(d0)) / 180 * Math.PI) * (r * d.scale.position.end); });
+              .attr('stroke', d.tick.color)
+              .attr('x1', function (d0) { return Math.cos((-90 + a(d0)) / 180 * Math.PI) * (r * (d.tick.position.start + 0.01)); })
+              .attr('y1', function (d0) { return Math.sin((-90 + a(d0)) / 180 * Math.PI) * (r * (d.tick.position.start + 0.01)); })
+              .attr('x2', function (d0) { return Math.cos((-90 + a(d0)) / 180 * Math.PI) * (r * d.tick.position.end); })
+              .attr('y2', function (d0) { return Math.sin((-90 + a(d0)) / 180 * Math.PI) * (r * d.tick.position.end); });
             gScale.selectAll('line.label')
               .data(middle)
               .enter().append('svg:line')
               .attr('class', 'mlabel')
-              .attr('stroke', d.palette.scale)
-              .attr('x1', function (d0) { return Math.cos((-90 + a(d0)) / 180 * Math.PI) * (r * (d.scale.position.start - 0.02)); })
-              .attr('y1', function (d0) { return Math.sin((-90 + a(d0)) / 180 * Math.PI) * (r * (d.scale.position.start - 0.02)); })
-              .attr('x2', function (d0) { return Math.cos((-90 + a(d0)) / 180 * Math.PI) * (r * d.scale.position.end); })
-              .attr('y2', function (d0) { return Math.sin((-90 + a(d0)) / 180 * Math.PI) * (r * d.scale.position.end); });
+              .attr('stroke', d.tick.color)
+              .attr('x1', function (d0) { return Math.cos((-90 + a(d0)) / 180 * Math.PI) * (r * (d.tick.position.start - 0.02)); })
+              .attr('y1', function (d0) { return Math.sin((-90 + a(d0)) / 180 * Math.PI) * (r * (d.tick.position.start - 0.02)); })
+              .attr('x2', function (d0) { return Math.cos((-90 + a(d0)) / 180 * Math.PI) * (r * d.tick.position.end); })
+              .attr('y2', function (d0) { return Math.sin((-90 + a(d0)) / 180 * Math.PI) * (r * d.tick.position.end); });
           } else {
             gScale.selectAll('line.label')
               .data(minor)
               .enter().append('svg:line')
 			  .attr('class', 'mlabel')
-			  .attr('stroke', d.palette.scale)
-              .attr('x1', function (d0) { return Math.cos((-90 + a(d0)) / 180 * Math.PI) * (r * d.scale.position.start); })
-              .attr('y1', function (d0) { return Math.sin((-90 + a(d0)) / 180 * Math.PI) * (r * d.scale.position.start); })
-              .attr('x2', function (d0) { return Math.cos((-90 + a(d0)) / 180 * Math.PI) * (r * d.scale.position.end); })
-              .attr('y2', function (d0) { return Math.sin((-90 + a(d0)) / 180 * Math.PI) * (r * d.scale.position.end); });
+			  .attr('stroke', d.tick.color)
+              .attr('x1', function (d0) { return Math.cos((-90 + a(d0)) / 180 * Math.PI) * (r * d.tick.position.start); })
+              .attr('y1', function (d0) { return Math.sin((-90 + a(d0)) / 180 * Math.PI) * (r * d.tick.position.start); })
+              .attr('x2', function (d0) { return Math.cos((-90 + a(d0)) / 180 * Math.PI) * (r * d.tick.position.end); })
+              .attr('y2', function (d0) { return Math.sin((-90 + a(d0)) / 180 * Math.PI) * (r * d.tick.position.end); });
           }
         }
       }
@@ -4356,28 +4333,7 @@ nv.models.dial = function () {
         glareNodes.enter().append('path')
           .attr('class', 'dial-glare')
           .attr('d', 'M ' + (-rdial3) + ',0 A' + rdial3 + ',' + rdial3 + ' 0 0,1 ' + rdial3 + ',0 A' + (rdial3 * 5) + ',' + (rdial3 * 5) + ' 0 0,0 ' + (-rdial3) + ',0')
-          .style('fill', 'url(#glareGradient)')
-          .on('mouseover', function () {
-            dispatch.elementMouseover({
-              value: d.caption[0].text,
-              label: d.caption[1].text,
-              color: d.needle.type == 0 ? d.scale.dial.face[0] : d.palette.rim[1]
-            })
-          })
-          .on('mousemove', function () {
-            dispatch.elementMousemove({
-              value: d.caption[0].text,
-              label: d.caption[1].text,
-              color: d.needle.type == 0 ? d.scale.dial.face[0] : d.palette.rim[1]
-            })
-          })
-          .on('mouseout', function () {
-            dispatch.elementMouseout({
-              value: d.caption[0].text,
-              label: d.caption[1].text,
-              color: d.needle.type == 0 ? d.scale.dial.face[0] : d.palette.rim[1]
-            })
-          })
+          .style('fill', 'url(#glareGradient' + d.id + ')')
           ;
       }
       function createDefs() {
@@ -4461,18 +4417,44 @@ nv.models.dial = function () {
           .attr("offset", "0.5")
           .attr("stop-color", "#f00")
 
-        var arcGradient = defs.append('svg:linearGradient')
-          .attr('id', 'arcGradient')
+        // var arcGradient = defs.append('svg:linearGradient')
+        //   .attr('id', 'arcGradient')
+        //   .attr('x1', '0%').attr('y1', '0%')
+        //   .attr('x2', '0%').attr('y2', '100%')
+        //   .attr('spreadMethod', 'pad');
+
+        // arcGradient.selectAll('stop')
+        //   .data([{ o: '0%', c: '#ffffff' }, { o: '100%', c: '#d0d0d0' }])
+        //   .enter().append('svg:stop')
+        //   .attr('offset', function (d) { return d.o; })
+        //   .attr('stop-color', '#00f')
+        //   .attr('stop-opacity', '1');
+        var pivotOuterGradient = defs.append('svg:linearGradient')
+          .attr('id', 'pivotOuterGradient' + d.id)
           .attr('x1', '0%').attr('y1', '0%')
           .attr('x2', '0%').attr('y2', '100%')
           .attr('spreadMethod', 'pad');
 
-        arcGradient.selectAll('stop')
-          .data([{ o: '0%', c: '#ffffff' }, { o: '100%', c: '#d0d0d0' }])
+        pivotOuterGradient.selectAll('stop')
+		  .data([{ o: d.gradient.pivot.outer[0].offset, c: d.gradient.pivot.outer[0].color, op: d.gradient.pivot.outer[0].opacity }, { o: d.gradient.pivot.outer[1].offset, c: d.gradient.pivot.outer[1].color, op: d.gradient.pivot.outer[1].opacity }])
           .enter().append('svg:stop')
           .attr('offset', function (d) { return d.o; })
-          .attr('stop-color', '#00f')
-          .attr('stop-opacity', '1');
+          .attr('stop-color', function (d) { return d.c; })
+          .attr('stop-opacity', function (d) { return d.op; });
+
+        var pivotInnerGradient = defs.append('svg:linearGradient')
+          .attr('id', 'pivotInnerGradient' + d.id)
+          .attr('x1', '0%').attr('y1', '0%')
+          .attr('x2', '0%').attr('y2', '100%')
+          .attr('spreadMethod', 'pad');
+
+        pivotInnerGradient.selectAll('stop')
+		.data([{ o: d.gradient.pivot.inner[0].offset, c: d.gradient.pivot.inner[0].color, op: d.gradient.pivot.inner[0].opacity }, { o: d.gradient.pivot.inner[1].offset, c: d.gradient.pivot.inner[1].color, op: d.gradient.pivot.inner[1].opacity }])
+		.enter().append('svg:stop')
+          .attr('offset', function (d) { return d.o; })
+          .attr('stop-color', function (d) { return d.c; })
+          .attr('stop-opacity', function (d) { return d.op; });
+
 
         var outerGradient = defs.append('svg:linearGradient')
           .attr('id', 'outerGradient' + d.id)
@@ -4481,11 +4463,11 @@ nv.models.dial = function () {
           .attr('spreadMethod', 'pad');
 
         outerGradient.selectAll('stop')
-          .data([{ o: '0%', c: '#ffffff' }, { o: '100%', c: '#d0d0d0' }])
+		  .data([{ o: d.gradient.outer[0].offset, c: d.gradient.outer[0].color, op: d.gradient.outer[0].opacity }, { o: d.gradient.outer[1].offset, c: d.gradient.outer[1].color, op: d.gradient.outer[1].opacity }])
           .enter().append('svg:stop')
           .attr('offset', function (d) { return d.o; })
           .attr('stop-color', function (d) { return d.c; })
-          .attr('stop-opacity', '1');
+          .attr('stop-opacity', function (d) { return d.op; });
 
         var innerGradient = defs.append('svg:linearGradient')
           .attr('id', 'innerGradient' + d.id)
@@ -4494,11 +4476,11 @@ nv.models.dial = function () {
           .attr('spreadMethod', 'pad');
 
         innerGradient.selectAll('stop')
-          .data([{ o: '0%', c: '#d0d0d0' }, { o: '100%', c: '#ffffff' }])
-          .enter().append('svg:stop')
+		.data([{ o: d.gradient.inner[0].offset, c: d.gradient.inner[0].color, op: d.gradient.inner[0].opacity }, { o: d.gradient.inner[1].offset, c: d.gradient.inner[1].color, op: d.gradient.inner[1].opacity }])
+		.enter().append('svg:stop')
           .attr('offset', function (d) { return d.o; })
           .attr('stop-color', function (d) { return d.c; })
-          .attr('stop-opacity', '1');
+          .attr('stop-opacity', function (d) { return d.op; });
 
         var faceGradient = defs.append('svg:linearGradient')
           .attr('id', 'faceGradient' + d.id)
@@ -4507,20 +4489,20 @@ nv.models.dial = function () {
           .attr('spreadMethod', 'pad');
 
         faceGradient.selectAll('stop')
-          .data([{ o: '0%', c: d.scale.dial.face[0] }, { o: '100%', c: d.scale.dial.face[1] }])
+          .data([{ o: d.gradient.face[0].offset, c: d.gradient.face[0].color, op: d.gradient.face[0].opacity }, { o: d.gradient.face[1].offset, c: d.gradient.face[1].color, op: d.gradient.face[1].opacity }])
           .enter().append('svg:stop')
           .attr('offset', function (d) { return d.o; })
           .attr('stop-color', function (d) { return d.c; })
-          .attr('stop-opacity', '1');
+          .attr('stop-opacity', function (d) { return d.op; });
 
         var glareGradient = defs.append('svg:linearGradient')
-          .attr('id', 'glareGradient')
+          .attr('id', 'glareGradient' + d.id)
           .attr('x1', '0%').attr('y1', '0%')
           .attr('x2', '0%').attr('y2', '100%')
           .attr('spreadMethod', 'pad');
 
         glareGradient.selectAll('stop')
-          .data([{ o: '0%', c: '#ffffff', op: 0.60 }, { o: '100%', c: '#ffffff', op: 0.00 }])
+          .data([{ o: d.gradient.glare[0].offset, c: d.gradient.glare[0].color, op: d.gradient.glare[0].opacity }, { o: d.gradient.glare[1].offset, c: d.gradient.glare[1].color, op: d.gradient.glare[1].opacity }])
           .enter().append('svg:stop')
           .attr('offset', function (d) { return d.o; })
           .attr('stop-color', function (d) { return d.c; })
@@ -4552,11 +4534,11 @@ nv.models.dial = function () {
           .attr('transform', function (d) { return 'rotate(' + a0(d.caption[0].text) + ')'; })
           ;
 
-        if (d.needle.type > 0) {
-          if (d.needle.type === 1) {
+        if (d.set > 0) {
+          if (d.set === 1) {
             n.append('svg:line')
               .attr('class', 'needle')
-              .attr('stroke', d.palette.needle)
+              .attr('stroke', d.needle.color)
               .attr('stroke-width', (d.needle.width * 40) + 'px')
               .attr('x1', 0)
               .attr('y1', 0)
@@ -4565,25 +4547,25 @@ nv.models.dial = function () {
           } else {
             n.append('svg:path')
               .attr('d', 'M ' + (-r * d.needle.width) + ',0 L0,' + (-r * d.needle.length) + ' L' + r * d.needle.width + ',0')
-              .attr('fill', d.palette.needle);
+              .attr('fill', d.needle.color);
           }
 
           n.append('svg:circle')
             .attr('r', r * d.pivot[1])
-            .style('fill', d.palette.pivot)
+            .style('fill', 'url(#pivotInnerGradient' + d.id + ')')
             ;
         } else {
           n.append('svg:path')
             .attr('d', 'M ' + (-r * d.needle.width) + ',' + (-r * d.needle.start) + ' L0,' + (-r * d.needle.length) + ' L' + r * d.needle.width + ',' + (-r * d.needle.start))
-            .attr('fill', d.palette.needle);
+            .attr('fill', d.needle.color);
 
           n.append('svg:circle')
             .attr('r', r * d.pivot[0])
-            .style('fill', 'url(#outerGradient' + d.id + ')');
+            .style('fill', 'url(#pivotOuterGradient' + d.id + ')');
 
           n.append('svg:circle')
             .attr('r', r * d.pivot[1])
-            .style('fill', 'url(#innerGradient' + d.id + ')');
+            .style('fill', 'url(#pivotInnerGradient' + d.id + ')');
         }
 
       }
@@ -4650,7 +4632,7 @@ nv.models.dial = function () {
     },
     needle: {
       get: function () { return needle; }, set: function (_) {
-        needle.type = _.type !== undefined ? _.type : needle.type;
+        needle.color = _.color !== undefined ? _.color : needle.color;
         needle.length = _.length !== undefined ? _.length : needle.length;
         needle.width = _.width !== undefined ? _.width : needle.width;
       }
@@ -4668,20 +4650,10 @@ nv.models.dial = function () {
         tick.exact = _.exact !== undefined ? _.exact : tick.exact;
       }
     },
-    palette: {
-      get: function () { return palette; }, set: function (_) {
-        palette.background = _.background !== undefined ? _.background : palette.background;
-        palette.scale = _.scale !== undefined ? _.scale : palette.scale;
-        palette.rim = _.rim !== undefined ? _.rim : palette.rim;
-        palette.pivot = _.pivot !== undefined ? _.pivot : palette.pivot;
-        palette.needle = _.needle !== undefined ? _.needle : palette.needle;
-      }
-    },
     scale: {
       get: function () { return scale; }, set: function (_) {
         scale.dial = _.dial !== undefined ? _.dial : scale.dial;
         scale.text = _.text !== undefined ? _.text : scale.text;
-        scale.position = _.position !== undefined ? _.position : scale.position;
         scale.rim = _.rim !== undefined ? _.rim : scale.rim;
       }
     },
@@ -4881,7 +4853,7 @@ nv.models.dialChart = function() {
             margin.left   = _.left   !== undefined ? _.left   : margin.left;
         }},
         needle:    {get: function(){return needle;}, set: function(_){
-          needle.type    = _.type    !== undefined ? _.type    : needle.type;
+          needle.color    = _.type    !== undefined ? _.type    : needle.color;
           needle.length    = _.length    !== undefined ? _.length    : needle.length;
           needle.width    = _.width    !== undefined ? _.width    : needle.width;
         }},
@@ -4891,17 +4863,9 @@ nv.models.dialChart = function() {
           tick.mark    = _.mark    !== undefined ? _.mark    : tick.mark;
           tick.exact    = _.exact    !== undefined ? _.exact    : tick.exact;
         }},
-        palette:    {get: function(){return palette;}, set: function(_){
-          palette.background    = _.background    !== undefined ? _.background    : palette.background;
-          palette.scale    = _.scale    !== undefined ? _.scale    : palette.scale;
-          palette.rim    = _.rim    !== undefined ? _.rim    : palette.rim;
-          palette.pivot    = _.pivot    !== undefined ? _.pivot    : palette.pivot;
-          palette.needle    = _.needle    !== undefined ? _.needle    : palette.needle;
-        }},
         scale:    {get: function(){return scale;}, set: function(_){
           scale.dial    = _.dial    !== undefined ? _.dial    : scale.dial;
           scale.text    = _.text    !== undefined ? _.text    : scale.text;
-          scale.position    = _.position    !== undefined ? _.position    : scale.position;
           scale.rim    = _.rim    !== undefined ? _.rim    : scale.rim;
         }}
     });
@@ -5397,7 +5361,6 @@ nv.models.discreteBar = function() {
         , getY = function(d) { return d.y }
         , forceY = [0] // 0 is forced by default.. this makes sense for the majority of bar graphs... user can always do chart.forceY([]) to remove
         , color = nv.utils.defaultColor()
-        , cornerRadius = 0 // sets corner radius (in pixels) to each bar
         , showValues = false
         , valueFormat = d3.format(',.2f')
         , xDomain
@@ -5557,7 +5520,6 @@ nv.models.discreteBar = function() {
                 .style('fill', function(d,i) { return d.color || color(d,i) })
                 .style('stroke', function(d,i) { return d.color || color(d,i) })
                 .select('rect')
-                .attr('rx', cornerRadius)
                 .attr('class', rectClass)
                 .watchTransition(renderWatch, 'discreteBar: bars rect')
                 .attr('width', x.rangeBand() * .9 / data.length);
@@ -5602,7 +5564,6 @@ nv.models.discreteBar = function() {
         height:  {get: function(){return height;}, set: function(_){height=_;}},
         forceY:  {get: function(){return forceY;}, set: function(_){forceY=_;}},
         showValues: {get: function(){return showValues;}, set: function(_){showValues=_;}},
-        cornerRadius:      {get: function(){return cornerRadius;}, set: function(_){cornerRadius=_}},
         x:       {get: function(){return getX;}, set: function(_){getX=_;}},
         y:       {get: function(){return getY;}, set: function(_){getY=_;}},
         xScale:  {get: function(){return x;}, set: function(_){x=_;}},
@@ -5820,7 +5781,7 @@ nv.models.discreteBarChart = function() {
             if (showYAxis) {
                 yAxis
                     .scale(y)
-                    ._ticks( nv.utils.calcTicksY(availableHeight/36, data, discretebar.y()) )
+                    ._ticks( nv.utils.calcTicksY(availableHeight/36, data) )
                     .tickSize( -availableWidth, 0);
 
                 g.select('.nv-y.nv-axis').call(yAxis);
@@ -10860,7 +10821,7 @@ nv.models.lineChart = function() {
             // Update Focus
             //============================================================
             if (!focusEnable && focus.brush.extent() === null) {
-                linesWrap.transition().call(lines);
+                linesWrap.call(lines);
                 updateXAxis();
                 updateYAxis();
             } else {
@@ -10905,23 +10866,21 @@ nv.models.lineChart = function() {
                             }
                         });
 
-                        if (currentValues.length > 0) {
-                            pointIndex = nv.interactiveBisect(currentValues, e.pointXValue, lines.x());
-                            var point = currentValues[pointIndex];
-                            var pointYValue = chart.y()(point, pointIndex);
-                            if (pointYValue !== null) {
-                                lines.highlightPoint(i, series.values.indexOf(point), true);
-                            }
-                            if (point === undefined) return;
-                            if (singlePoint === undefined) singlePoint = point;
-                            if (pointXLocation === undefined) pointXLocation = chart.xScale()(chart.x()(point,pointIndex));
-                            allData.push({
-                                key: series.key,
-                                value: pointYValue,
-                                color: color(series,series.seriesIndex),
-                                data: point
-                            });
+                        pointIndex = nv.interactiveBisect(currentValues, e.pointXValue, lines.x());
+                        var point = currentValues[pointIndex];
+                        var pointYValue = chart.y()(point, pointIndex);
+                        if (pointYValue !== null) {
+                            lines.highlightPoint(i, pointIndex, true);
                         }
+                        if (point === undefined) return;
+                        if (singlePoint === undefined) singlePoint = point;
+                        if (pointXLocation === undefined) pointXLocation = chart.xScale()(chart.x()(point,pointIndex));
+                        allData.push({
+                            key: series.key,
+                            value: pointYValue,
+                            color: color(series,series.seriesIndex),
+                            data: point
+                        });
                     });
                 //Highlight the tooltip entry based on which point the mouse is closest to.
                 if (allData.length > 2) {
@@ -10937,17 +10896,16 @@ nv.models.lineChart = function() {
                     return d == null ? "N/A" : yAxis.tickFormat()(d);
                 };
 
-                if (typeof pointIndex !== 'undefined') {
-                    interactiveLayer.tooltip
-                        .valueFormatter(interactiveLayer.tooltip.valueFormatter() || defaultValueFormatter)
-                        .data({
-                            value: chart.x()( singlePoint,pointIndex ),
-                            index: pointIndex,
-                            series: allData
-                        })();
+                interactiveLayer.tooltip
+                    .valueFormatter(interactiveLayer.tooltip.valueFormatter() || defaultValueFormatter)
+                    .data({
+                        value: chart.x()( singlePoint,pointIndex ),
+                        index: pointIndex,
+                        series: allData
+                    })();
 
-                    interactiveLayer.renderGuideLine(pointXLocation);
-                }
+                interactiveLayer.renderGuideLine(pointXLocation);
+
             });
 
             interactiveLayer.dispatch.on('elementClick', function(e) {
@@ -13768,7 +13726,7 @@ nv.models.multiChart = function() {
             var extraValue1BarStacked = [];
             if (bars1.stacked() && dataBars1.length) {
                 var extraValue1BarStacked = dataBars1.filter(function(d){return !d.disabled}).map(function(a){return a.values});
-
+                
                 if (extraValue1BarStacked.length > 0)
                     extraValue1BarStacked = extraValue1BarStacked.reduce(function(a,b){
                         return a.map(function(aVal,i){return {x: aVal.x, y: aVal.y + b[i].y}})
@@ -13777,27 +13735,18 @@ nv.models.multiChart = function() {
             if (dataBars1.length) {
                 extraValue1BarStacked.push({x:0, y:0});
             }
-
+            
             var extraValue2BarStacked = [];
             if (bars2.stacked() && dataBars2.length) {
                 var extraValue2BarStacked = dataBars2.filter(function(d){return !d.disabled}).map(function(a){return a.values});
-
+                
                 if (extraValue2BarStacked.length > 0)
                     extraValue2BarStacked = extraValue2BarStacked.reduce(function(a,b){
                         return a.map(function(aVal,i){return {x: aVal.x, y: aVal.y + b[i].y}})
                     });
             }
-
             if (dataBars2.length) {
-              extraValue2BarStacked.push({x:0, y:0});
-            }
-
-            function getStackedAreaYs(series) {
-                return d3.transpose(series).map(function(x) {
-                    return x.map(function(g) {
-                        return g.y;
-                        });
-                    }).map(function(x) {return d3.sum(x);})
+                extraValue2BarStacked.push({x:0, y:0});
             }
             
             yScale1 .domain(yDomain1 || d3.extent(d3.merge(series1).concat(extraValue1BarStacked), function(d) { return d.y } ))
@@ -13808,22 +13757,12 @@ nv.models.multiChart = function() {
 
             lines1.yDomain(yScale1.domain());
             scatters1.yDomain(yScale1.domain());
-            if(bars1.stacked()) {
-                var yStackScale1 = yScale1.domain([0, d3.max(getStackedAreaYs(series1))]).range([0, availableHeight]);
-                bars1.yDomain(yStackScale1.domain())
-            } else {
-                bars1.yDomain(yScale1.domain());
-            }
+            bars1.yDomain(yScale1.domain());
             stack1.yDomain(yScale1.domain());
 
             lines2.yDomain(yScale2.domain());
             scatters2.yDomain(yScale2.domain());
-            if(bars2.stacked()) {
-                var yStackScale2 = yScale2.domain([0, d3.max(getStackedAreaYs(series2))]).range([0, availableHeight]);
-                bars2.yDomain(yStackScale2.domain())
-            } else {
-                bars2.yDomain(yScale2.domain());
-            }
+            bars2.yDomain(yScale2.domain());
             stack2.yDomain(yScale2.domain());
 
             if(dataStack1.length){d3.transition(stack1Wrap).call(stack1);}
@@ -13976,60 +13915,13 @@ nv.models.multiChart = function() {
               }
             }
 
-            function highlightPoint(series, pointIndex, b, pointYValue) {
-
-              var chartMap = {
-                'line': {
-                  'yAxis1': {
-                    chart: lines1,
-                    data: dataLines1
-                  },
-                  'yAxis2': {
-                    chart: lines2,
-                    data: dataLines2
-                  }
-                },
-                'scatter': {
-                  'yAxis1': {
-                    chart: scatters1,
-                    data: dataScatters1
-                  },
-                  'yAxis2': {
-                    chart: scatters2,
-                    data: dataScatters2
-                  }
-                },
-                'bar': {
-                  'yAxis1': {
-                    chart: bars1,
-                    data: dataBars1
-                  },
-                  'yAxis2': {
-                    chart: bars2,
-                    data: dataBars2
-                  }
-                },
-                'area': {
-                  'yAxis1': {
-                    chart: stack1,
-                    data: dataStack1
-                  },
-                  'yAxis2': {
-                    chart: stack2,
-                    data: dataStack2
-                  }
-                }
-              };
-
-              var relevantChart = chartMap[series.type]['yAxis' + series.yAxis].chart;
-              var relevantDatasets = chartMap[series.type]['yAxis' + series.yAxis].data;
-              var seriesIndex = relevantDatasets.reduce(function (seriesIndex, dataSet, i) {
-                return dataSet.key === series.key ? i : seriesIndex;
-              }, 0);
-
-              try {
-                relevantChart.highlightPoint(seriesIndex, pointIndex, b, pointYValue);
-              } catch(e){}
+            function highlightPoint(serieIndex, pointIndex, b){
+              for(var i=0, il=charts.length; i < il; i++){
+                var chart = charts[i];
+                try {
+                  chart.highlightPoint(serieIndex, pointIndex, b);
+                } catch(e){}
+              }
             }
 
             if(useInteractiveGuideline){
@@ -14041,7 +13933,7 @@ nv.models.multiChart = function() {
                         series.seriesIndex = i;
                         return !series.disabled;
                     })
-                    .forEach(function(series, i) {
+                    .forEach(function(series,i) {
                         var extent = x.domain();
                         var currentValues = series.values.filter(function(d,i) {
                             return chart.x()(d,i) >= extent[0] && chart.x()(d,i) <= extent[1];
@@ -14050,8 +13942,8 @@ nv.models.multiChart = function() {
                         pointIndex = nv.interactiveBisect(currentValues, e.pointXValue, chart.x());
                         var point = currentValues[pointIndex];
                         var pointYValue = chart.y()(point, pointIndex);
-                        if (pointYValue !== null && !isNaN(pointYValue) && !series.noHighlightSeries) {
-                          highlightPoint(series, pointIndex, true);
+                        if (pointYValue !== null) {
+                            highlightPoint(i, pointIndex, true);
                         }
                         if (point === undefined) return;
                         if (singlePoint === undefined) singlePoint = point;
@@ -14069,6 +13961,7 @@ nv.models.multiChart = function() {
                         var yAxis = allData[i].yAxis;
                         return d == null ? "N/A" : yAxis.tickFormat()(d);
                     };
+
                     interactiveLayer.tooltip
                         .headerFormatter(function(d, i) {
                             return xAxis.tickFormat()(d, i);
@@ -14162,7 +14055,6 @@ nv.models.multiChart = function() {
         width:      {get: function(){return width;}, set: function(_){width=_;}},
         height:     {get: function(){return height;}, set: function(_){height=_;}},
         showLegend: {get: function(){return showLegend;}, set: function(_){showLegend=_;}},
-        xScale: {get: function(){return x;}, set: function(_){ x = _; xAxis.scale(x); }},
         yDomain1:      {get: function(){return yDomain1;}, set: function(_){yDomain1=_;}},
         yDomain2:    {get: function(){return yDomain2;}, set: function(_){yDomain2=_;}},
         noData:    {get: function(){return noData;}, set: function(_){noData=_;}},
@@ -16802,13 +16694,13 @@ nv.models.scatter = function() {
                 needsUpdate = false;
 
                 if (!interactive) return false;
-                container.selectAll(".nv-point.hover").classed("hover", false);
-
-                // nuke all voronoi paths
-                wrap.select('.nv-point-paths').selectAll('path').remove();
 
                 // inject series and point index for reference into voronoi
                 if (useVoronoi === true) {
+
+                    // nuke all voronoi paths on reload and recreate them
+                    wrap.select('.nv-point-paths').selectAll('path').remove();
+
                     var vertices = d3.merge(data.map(function(group, groupIndex) {
                             return group.values
                                 .map(function(point, pointIndex) {
@@ -16860,10 +16752,6 @@ nv.models.scatter = function() {
                     }
 
                     var voronoi = d3.geom.voronoi(vertices).map(function(d, i) {
-                        if (d.length === 0) {
-                            return null;
-                        }
-
                         return {
                             'data': bounds.clip(d),
                             'series': vertices[i][2],
@@ -16962,8 +16850,8 @@ nv.models.scatter = function() {
                         //.style('pointer-events', 'auto') // recativate events, disabled by css
                         .on('click', function(d,i) {
                             //nv.log('test', d, i);
-                            if (needsUpdate || !data[d[0].series]) return 0; //check if this is a dummy point
-                            var series = data[d[0].series],
+                            if (needsUpdate || !data[d.series]) return 0; //check if this is a dummy point
+                            var series = data[d.series],
                                 point  = series.values[i];
                             var element = this;
                             dispatch.elementClick({
@@ -16971,15 +16859,15 @@ nv.models.scatter = function() {
                                 series: series,
                                 pos: [x(getX(point, i)) + margin.left, y(getY(point, i)) + margin.top], //TODO: make this pos base on the page
                                 relativePos: [x(getX(point, i)) + margin.left, y(getY(point, i)) + margin.top],
-                                seriesIndex: d[0].series,
+                                seriesIndex: d.series,
                                 pointIndex: i,
                                 event: d3.event,
                                 element: element
                             });
                         })
                         .on('dblclick', function(d,i) {
-                            if (needsUpdate || !data[d[0].series]) return 0; //check if this is a dummy point
-                            var series = data[d[0].series],
+                            if (needsUpdate || !data[d.series]) return 0; //check if this is a dummy point
+                            var series = data[d.series],
                                 point  = series.values[i];
 
                             dispatch.elementDblClick({
@@ -16987,13 +16875,13 @@ nv.models.scatter = function() {
                                 series: series,
                                 pos: [x(getX(point, i)) + margin.left, y(getY(point, i)) + margin.top],//TODO: make this pos base on the page
                                 relativePos: [x(getX(point, i)) + margin.left, y(getY(point, i)) + margin.top],
-                                seriesIndex: d[0].series,
+                                seriesIndex: d.series,
                                 pointIndex: i
                             });
                         })
                         .on('mouseover', function(d,i) {
-                            if (needsUpdate || !data[d[0].series]) return 0; //check if this is a dummy point
-                            var series = data[d[0].series],
+                            if (needsUpdate || !data[d.series]) return 0; //check if this is a dummy point
+                            var series = data[d.series],
                                 point  = series.values[i];
 
                             dispatch.elementMouseover({
@@ -17001,14 +16889,14 @@ nv.models.scatter = function() {
                                 series: series,
                                 pos: [x(getX(point, i)) + margin.left, y(getY(point, i)) + margin.top],//TODO: make this pos base on the page
                                 relativePos: [x(getX(point, i)) + margin.left, y(getY(point, i)) + margin.top],
-                                seriesIndex: d[0].series,
+                                seriesIndex: d.series,
                                 pointIndex: i,
-                                color: color(d[0], i)
+                                color: color(d, i)
                             });
                         })
                         .on('mouseout', function(d,i) {
-                            if (needsUpdate || !data[d[0].series]) return 0; //check if this is a dummy point
-                            var series = data[d[0].series],
+                            if (needsUpdate || !data[d.series]) return 0; //check if this is a dummy point
+                            var series = data[d.series],
                                 point  = series.values[i];
 
                             dispatch.elementMouseout({
@@ -17016,9 +16904,9 @@ nv.models.scatter = function() {
                                 series: series,
                                 pos: [x(getX(point, i)) + margin.left, y(getY(point, i)) + margin.top],//TODO: make this pos base on the page
                                 relativePos: [x(getX(point, i)) + margin.left, y(getY(point, i)) + margin.top],
-                                seriesIndex: d[0].series,
+                                seriesIndex: d.series,
                                 pointIndex: i,
-                                color: color(d[0], i)
+                                color: color(d, i)
                             });
                         });
                 }
@@ -17160,8 +17048,6 @@ nv.models.scatter = function() {
                     .classed('hover',false);
                 });
                 titles.watchTransition(renderWatch, 'scatter labels')
-                    .text(function(d,i){ 
-                        return d[0].label;})
                     .attr('transform', function(d) {
                         var dx = nv.utils.NaNtoZero(x(getX(d[0],d[1])))+ Math.sqrt(z(getSize(d[0],d[1]))/Math.PI)+2;
                         return 'translate(' + dx + ',' + nv.utils.NaNtoZero(y(getY(d[0],d[1]))) + ')'
@@ -17542,40 +17428,37 @@ nv.models.scatterChart = function() {
             }
 
             // Setup Distribution
-            distX
-                .getData(scatter.x())
-                .scale(x)
-                .width(availableWidth)
-                .color(data.map(function(d,i) {
-                    return d.color || color(d, i);
-                }).filter(function(d,i) { return !data[i].disabled }));
-            gEnter.select('.nv-distWrap').append('g')
-                .attr('class', 'nv-distributionX');
-            g.select('.nv-distributionX')
-                .attr('transform', 'translate(0,' + y.range()[0] + ')')
-                .datum(data.filter(function(d) { return !d.disabled }))
-                .call(distX)
-                .style('opacity', function() { return showDistX ? '1' : '1e-6'; })
-                .watchTransition(renderWatch, 'scatterPlusLineChart')
-                .style('opacity', function() { return showDistX ? '1' : '1e-6'; })
+            if (showDistX) {
+                distX
+                    .getData(scatter.x())
+                    .scale(x)
+                    .width(availableWidth)
+                    .color(data.map(function(d,i) {
+                        return d.color || color(d, i);
+                    }).filter(function(d,i) { return !data[i].disabled }));
+                gEnter.select('.nv-distWrap').append('g')
+                    .attr('class', 'nv-distributionX');
+                g.select('.nv-distributionX')
+                    .attr('transform', 'translate(0,' + y.range()[0] + ')')
+                    .datum(data.filter(function(d) { return !d.disabled }))
+                    .call(distX);
+            }
 
-
-            distY
-                .getData(scatter.y())
-                .scale(y)
-                .width(availableHeight)
-                .color(data.map(function(d,i) {
-                    return d.color || color(d, i);
-                }).filter(function(d,i) { return !data[i].disabled }));
-            gEnter.select('.nv-distWrap').append('g')
-                .attr('class', 'nv-distributionY');
-            g.select('.nv-distributionY')
-                .attr('transform', 'translate(' + (rightAlignYAxis ? availableWidth : -distY.size() ) + ',0)')
-                .datum(data.filter(function(d) { return !d.disabled }))
-                .call(distY)
-                .style('opacity', function() { return showDistY ? '1' : '1e-6'; })
-                .watchTransition(renderWatch, 'scatterPlusLineChart')
-                .style('opacity', function() { return showDistY ? '1' : '1e-6'; })
+            if (showDistY) {
+                distY
+                    .getData(scatter.y())
+                    .scale(y)
+                    .width(availableHeight)
+                    .color(data.map(function(d,i) {
+                        return d.color || color(d, i);
+                    }).filter(function(d,i) { return !data[i].disabled }));
+                gEnter.select('.nv-distWrap').append('g')
+                    .attr('class', 'nv-distributionY');
+                g.select('.nv-distributionY')
+                    .attr('transform', 'translate(' + (rightAlignYAxis ? availableWidth : -distY.size() ) + ',0)')
+                    .datum(data.filter(function(d) { return !d.disabled }))
+                    .call(distY);
+            }
 
             //============================================================
             // Event Handling/Dispatching (in chart's scope)
@@ -18067,8 +17950,6 @@ nv.models.stackedArea = function() {
         , y //can be accessed via chart.yScale()
         , scatter = nv.models.scatter()
         , duration = 250
-        , transformData = function(d, y0, y) { d.display = { y: y, y0: y0 }; }
-        , areaY1 = function(d) { return y(d.display.y + d.display.y0) }
         , dispatch =  d3.dispatch('areaClick', 'areaMouseover', 'areaMouseout','renderEnd', 'elementClick', 'elementMouseover', 'elementMouseout')
         ;
 
@@ -18126,7 +18007,12 @@ nv.models.stackedArea = function() {
                 .values(function(d) { return d.values })  //TODO: make values customizeable in EVERY model in this fashion
                 .x(getX)
                 .y(getY)
-                .out(transformData)
+                .out(function(d, y0, y) {
+                    d.display = {
+                        y: y,
+                        y0: y0
+                    };
+                })
             (dataFiltered);
 
             // Setup containers and skeleton of chart
@@ -18140,13 +18026,13 @@ nv.models.stackedArea = function() {
             gEnter.append('g').attr('class', 'nv-scatterWrap');
 
             wrap.attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
-
+            
             // If the user has not specified forceY, make sure 0 is included in the domain
             // Otherwise, use user-specified values for forceY
             if (scatter.forceY().length == 0) {
                 scatter.forceY().push(0);
             }
-
+            
             scatter
                 .width(availableWidth)
                 .height(availableHeight)
@@ -18180,7 +18066,9 @@ nv.models.stackedArea = function() {
                 .y0(function(d) {
                     return y(d.display.y0)
                 })
-                .y1(areaY1)
+                .y1(function(d) {
+                    return y(d.display.y + d.display.y0)
+                })
                 .interpolate(interpolate);
 
             var zeroArea = d3.svg.area()
@@ -18319,9 +18207,6 @@ nv.models.stackedArea = function() {
         // simple functor options
         x:     {get: function(){return getX;}, set: function(_){getX = d3.functor(_);}},
         y:     {get: function(){return getY;}, set: function(_){getY = d3.functor(_);}},
-
-        areaY1:     {get: function(){return areaY1;}, set: function(_){ areaY1 = d3.functor(_);}},
-        transformData:     {get: function(){return transformData;}, set: function(_){ transformData = d3.functor(_);}},
 
         // options that require extra logic in the setter
         margin: {get: function(){return margin;}, set: function(_){
@@ -18545,7 +18430,8 @@ nv.models.stackedAreaChart = function() {
                 g.select('.nv-legendWrap').datum(data).call(legend);
 
                 if (legendPosition === 'bottom') {
-                	var xAxisHeight = xAxis.height();
+                	// constant from axis.js, plus some margin for better layout
+                	var xAxisHeight = (showXAxis ? 12 : 0) + 10;
                    	margin.bottom = Math.max(legend.height() + xAxisHeight, margin.bottom);
                    	availableHeight = nv.utils.availableHeight(height, container, margin) - (focusEnable ? focus.height() : 0);
                 	var legendTop = availableHeight + xAxisHeight;
@@ -18578,12 +18464,6 @@ nv.models.stackedAreaChart = function() {
                         metaKey: 'Stream',
                         disabled: stacked.style() != 'stream',
                         style: 'stream'
-                    },
-                    {
-                        key: controlLabels.stream_center || 'Stream Center',
-                        metaKey: 'Stream_Center',
-                        disabled: stacked.style() != 'stream_center',
-                        style: 'stream-center'
                     },
                     {
                         key: controlLabels.expanded || 'Expanded',
@@ -18793,7 +18673,7 @@ nv.models.stackedAreaChart = function() {
                             stacked.highlightPoint(i, pointIndex, true);
                             atleastOnePoint = true;
                         }
-
+                    
                         // Draw at least one point if all values are zero.
                         if (i === (data.length - 1) && !atleastOnePoint) {
                             stacked.highlightPoint(i, pointIndex, true);
@@ -19586,6 +19466,6 @@ nv.models.sunburstChart = function() {
 
 };
 
-nv.version = "1.8.6-dev";
+nv.version = "1.8.6";
 })();
 //# sourceMappingURL=nv.d3.js.map
