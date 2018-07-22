@@ -188,7 +188,7 @@ nv.models.dialChart = function() {
             margin.left   = _.left   !== undefined ? _.left   : margin.left;
         }},
         needle:    {get: function(){return needle;}, set: function(_){
-          needle.type    = _.type    !== undefined ? _.type    : needle.type;
+          needle.color    = _.type    !== undefined ? _.type    : needle.color;
           needle.length    = _.length    !== undefined ? _.length    : needle.length;
           needle.width    = _.width    !== undefined ? _.width    : needle.width;
         }},
@@ -198,17 +198,9 @@ nv.models.dialChart = function() {
           tick.mark    = _.mark    !== undefined ? _.mark    : tick.mark;
           tick.exact    = _.exact    !== undefined ? _.exact    : tick.exact;
         }},
-        palette:    {get: function(){return palette;}, set: function(_){
-          palette.background    = _.background    !== undefined ? _.background    : palette.background;
-          palette.scale    = _.scale    !== undefined ? _.scale    : palette.scale;
-          palette.rim    = _.rim    !== undefined ? _.rim    : palette.rim;
-          palette.pivot    = _.pivot    !== undefined ? _.pivot    : palette.pivot;
-          palette.needle    = _.needle    !== undefined ? _.needle    : palette.needle;
-        }},
         scale:    {get: function(){return scale;}, set: function(_){
           scale.dial    = _.dial    !== undefined ? _.dial    : scale.dial;
           scale.text    = _.text    !== undefined ? _.text    : scale.text;
-          scale.position    = _.position    !== undefined ? _.position    : scale.position;
           scale.rim    = _.rim    !== undefined ? _.rim    : scale.rim;
         }}
     });

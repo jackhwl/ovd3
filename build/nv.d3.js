@@ -1,4 +1,4 @@
-/* nvd3 version 1.8.6-dev (https://github.com/novus/nvd3) 2018-07-20 */
+/* nvd3 version 1.8.6-dev (https://github.com/novus/nvd3) 2018-07-21 */
 (function(){
 
 // set up main nv object
@@ -4109,21 +4109,21 @@ nv.models.dial = function () {
           .on('mouseover', function () {
             dispatch.elementMouseover({
               value: d.caption[0].text,
-              label: 'Value:',
+              label: d.caption[1].text,
               color: d.needle.type == 0 ? d.scale.dial.face[0] : d.palette.rim[1]
             })
           })
           .on('mousemove', function () {
             dispatch.elementMousemove({
               value: d.caption[0].text,
-              label: 'Value:',
+              label: d.caption[1].text,
               color: d.needle.type == 0 ? d.scale.dial.face[0] : d.palette.rim[1]
             })
           })
           .on('mouseout', function () {
             dispatch.elementMouseout({
               value: d.caption[0].text,
-              label: 'Value:',
+              label: d.caption[1].text,
               color: d.needle.type == 0 ? d.scale.dial.face[0] : d.palette.rim[1]
             })
           });
@@ -4306,10 +4306,11 @@ nv.models.dial = function () {
           gScale.selectAll('circle.label')
             .data(minor)
             .enter().append('svg:circle')
-            .attr('class', 'label')
+            .attr('class', 'mlabel')
+			.attr('fill', d.palette.scale)
             .attr('cx', function (d0) { return Math.cos((-90 + a(d0)) / 180 * Math.PI) * (r * d.scale.position.start); })
             .attr('cy', function (d0) { return Math.sin((-90 + a(d0)) / 180 * Math.PI) * (r * d.scale.position.start); })
-            .attr('r', 2);
+            .attr('r', d.scale.position.end-d.scale.position.start);
         }
 
         if (d.tick.mark == 'line') {
@@ -4336,7 +4337,8 @@ nv.models.dial = function () {
             gScale.selectAll('line.label')
               .data(minor)
               .enter().append('svg:line')
-              .attr('class', 'label')
+			  .attr('class', 'mlabel')
+			  .attr('stroke', d.palette.scale)
               .attr('x1', function (d0) { return Math.cos((-90 + a(d0)) / 180 * Math.PI) * (r * d.scale.position.start); })
               .attr('y1', function (d0) { return Math.sin((-90 + a(d0)) / 180 * Math.PI) * (r * d.scale.position.start); })
               .attr('x2', function (d0) { return Math.cos((-90 + a(d0)) / 180 * Math.PI) * (r * d.scale.position.end); })
@@ -4358,21 +4360,21 @@ nv.models.dial = function () {
           .on('mouseover', function () {
             dispatch.elementMouseover({
               value: d.caption[0].text,
-              label: 'Value:',
+              label: d.caption[1].text,
               color: d.needle.type == 0 ? d.scale.dial.face[0] : d.palette.rim[1]
             })
           })
           .on('mousemove', function () {
             dispatch.elementMousemove({
               value: d.caption[0].text,
-              label: 'Value:',
+              label: d.caption[1].text,
               color: d.needle.type == 0 ? d.scale.dial.face[0] : d.palette.rim[1]
             })
           })
           .on('mouseout', function () {
             dispatch.elementMouseout({
               value: d.caption[0].text,
-              label: 'Value:',
+              label: d.caption[1].text,
               color: d.needle.type == 0 ? d.scale.dial.face[0] : d.palette.rim[1]
             })
           })
