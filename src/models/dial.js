@@ -1,3 +1,4 @@
+/*global nv, d3*/
 nv.models.dial = function () {
   "use strict";
 
@@ -6,20 +7,20 @@ nv.models.dial = function () {
   //------------------------------------------------------------
 
   var margin = { top: 0, right: 0, bottom: 0, left: 0 }
-    , bgColor = '#031732'
+    //, bgColor = '#031732'
     , id = function (d) { return d.id }
     , ranges = function (d) { return d.ranges }
     , measures = function (d) { return d.measures }
-    , rangeLabels = function (d) { return d.rangeLabels ? d.rangeLabels : [] }
-    , measureLabels = function (d) { return d.measureLabels ? d.measureLabels : [] }
+    //, rangeLabels = function (d) { return d.rangeLabels ? d.rangeLabels : [] }
+    //, measureLabels = function (d) { return d.measureLabels ? d.measureLabels : [] }
     , forceX = [0] // List of numbers to Force into the X scale (ie. 0, or a max / min, etc.)
     , width = 380
     , height = 30
-    , container = null
+    //, container = null
     , tickFormat = null
     , color = nv.utils.getColor(['#1f77b4'])
-    , defaultRangeLabels = ["Maximum", "Mean", "Minimum"]
-    , legacyRangeClassNames = ["Max", "Avg", "Min"]
+    //, defaultRangeLabels = ["Maximum", "Mean", "Minimum"]
+    //, legacyRangeClassNames = ["Max", "Avg", "Min"]
     , duration = 1000
     //, needle = {type: 1, length: 0.75, width: 0.05}
     //, tick = {minor: 5, major: 14, mark: 'line', exact: true}
@@ -31,7 +32,7 @@ nv.models.dial = function () {
     //, y = 250
     //, r = 280
     , scale = function (d) { return d.scale }
-    , palette = function (d) { return d.palette }
+    //, palette = function (d) { return d.palette }
     , range = function (d) { return d.range }
     , scaleDomain = function (d) { return d.scaleDomain }
     , caption = function (d) { return d.caption }
@@ -42,12 +43,9 @@ nv.models.dial = function () {
     ;
 
   var renderWatch = nv.utils.renderWatch(dispatch);
-  //console.log('palette=', palette);
-  //console.log('scaleDomain=', scaleDomain);
   function chart(selection) {
-  //console.log('selection=', selection);
-  renderWatch.reset();
-    selection.each(function (data, i) {
+    renderWatch.reset();
+    selection.each(function (data) {
       var d = data[0];
       var availableWidth = width - margin.left - margin.right,
         availableHeight = height - margin.top - margin.bottom,
@@ -62,13 +60,7 @@ nv.models.dial = function () {
       a.percentageFormat = d.scale.text.format.indexOf('%') > 0;
       a.measurePercentageFormat = d.caption[0].format.indexOf('%') > 0;
 
-    //    console.log('0a.percentageFormat=', a.percentageFormat);
-    //    console.log('d.scale.text.format=', d.scale.text.format);
-    //   console.log('calDomain=', calDomain);
-    //   console.log('scaleDomain=', d.scaleDomain);
-
       var r = Math.min(wm / 2, hm / 2);
-      //console.log('r=',r);
       // Setup containers and skeleton of chart
       container.selectAll('g.nv-wrap.nv-dial').remove();
       var wrap = container.selectAll('g.nv-wrap.nv-dial').data([d]);
@@ -210,7 +202,7 @@ nv.models.dial = function () {
 
         // Compute stroke outline for segment p12.
         function lineJoin(p0, p1, p2, p3, width) {
-          var u12 = perp(p1, p2),
+          var u12 = perp(p1, p2), e,
             r = width / 2,
             a = [p1[0] + u12[0] * r, p1[1] + u12[1] * r],
             b = [p2[0] + u12[0] * r, p2[1] + u12[1] * r],
@@ -218,13 +210,15 @@ nv.models.dial = function () {
             d = [p1[0] - u12[0] * r, p1[1] - u12[1] * r];
 
           if (p0) { // clip ad and dc using average of u01 and u12
-            var u01 = perp(p0, p1), e = [p1[0] + u01[0] + u12[0], p1[1] + u01[1] + u12[1]];
+            var u01 = perp(p0, p1);
+            e = [p1[0] + u01[0] + u12[0], p1[1] + u01[1] + u12[1]];
             a = lineIntersect(p1, e, a, b);
             d = lineIntersect(p1, e, d, c);
           }
 
           if (p3) { // clip ab and dc using average of u12 and u23
-            var u23 = perp(p2, p3), e = [p2[0] + u23[0] + u12[0], p2[1] + u23[1] + u12[1]];
+            var u23 = perp(p2, p3);
+            e = [p2[0] + u23[0] + u12[0], p2[1] + u23[1] + u12[1]];
             b = lineIntersect(p2, e, a, b);
             c = lineIntersect(p2, e, d, c);
           }
@@ -274,11 +268,11 @@ nv.models.dial = function () {
 
         //var tick0 = tick.major===1 ? 10 : tick.major;
 		var major = a.ticks(d.tick.major);
-		var major0 = a0.ticks(d.tick.major);
+		//var major0 = a0.ticks(d.tick.major);
         var minor = a.ticks(d.tick.minor * d.tick.major);//.filter(function(d) { return major.indexOf(d) == -1; });
         var middle = a.ticks(d.tick.minor * d.tick.major).filter(function (d) { return major.indexOf(d) != -1; });
 		var majorRange = d.tick.exact ? [major[0], d.scaleDomain[1]] : [major[0], major[major.length - 1]];
-		var major0Range = d.tick.exact ? [major0[0], d.scaleDomain[1]] : [major0[0], major0[major0.length - 1]];
+		//var major0Range = d.tick.exact ? [major0[0], d.scaleDomain[1]] : [major0[0], major0[major0.length - 1]];
         var scaleDomainUpper = scaleDomain(d)[1];
 
         //  console.log('major =', major );
@@ -296,11 +290,11 @@ nv.models.dial = function () {
           .attr({
             'x': function (d0) { return Math.cos((-90 + a((d.tick.exact && d.scale.text.hide.middle ? d0 / scaleDomainUpper * major[major.length - 1] : d0))) / 180 * Math.PI) * r * d.scale.text.position; },
             'y': function (d0) { return Math.sin((-90 + a((d.tick.exact && d.scale.text.hide.middle ? d0 / scaleDomainUpper * major[major.length - 1] : d0))) / 180 * Math.PI) * r * d.scale.text.position; },
-            'dy': function (d0) { return d.scale.text.dy + 'em' },
-            'font-family': function (d0) { return d.scale.text.family },
-            'font-size': function (d0) { return r * d.scale.text.size * d.scale.text.scale + 'px' },
-            'font-weight': function (d0) { return d.scale.text.weight },
-            'fill': function (d0) { return d.scale.text.color },
+            'dy': function () { return d.scale.text.dy + 'em' },
+            'font-family': function () { return d.scale.text.family },
+            'font-size': function () { return r * d.scale.text.size * d.scale.text.scale + 'px' },
+            'font-weight': function () { return d.scale.text.weight },
+            'fill': function () { return d.scale.text.color },
             'alignment-baseline': 'middle',
             'text-anchor': 'middle',
           })
@@ -647,10 +641,10 @@ nv.models.dial = function () {
 		renderWatch.reset(duration);
 	} },
 
-    x: { get: function () { return x; }, set: function (_) { x = _; } },
-    y: { get: function () { return y; }, set: function (_) { y = _; } },
-    r: { get: function () { return r; }, set: function (_) { r = _; } },
-    domain: { get: function () { return domain; }, set: function (_) { domain = _; } },
+    // x: { get: function () { return x; }, set: function (_) { x = _; } },
+    // y: { get: function () { return y; }, set: function (_) { y = _; } },
+    // r: { get: function () { return r; }, set: function (_) { r = _; } },
+    //domain: { get: function () { return domain; }, set: function (_) { domain = _; } },
     scaleDomain: { get: function () { return scaleDomain; }, set: function (_) { scaleDomain = _; } },
     range: { get: function () { return range; }, set: function (_) { range = _; } },
     pivot: { get: function () { return pivot; }, set: function (_) { pivot = _; } },

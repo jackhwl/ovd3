@@ -1,4 +1,4 @@
-/* nvd3 version 1.8.6 (https://github.com/novus/nvd3) 2018-07-22 */
+/* nvd3 version 1.8.6 (https://github.com/novus/nvd3) 2018-07-23 */
 (function(){
 
 // set up main nv object
@@ -4043,10 +4043,10 @@ nv.models.dial = function () {
       a.percentageFormat = d.scale.text.format.indexOf('%') > 0;
       a.measurePercentageFormat = d.caption[0].format.indexOf('%') > 0;
 
-      // console.log('a=', a);
-      // console.log('a0=', a0);
-      // console.log('calDomain=', calDomain);
-      // console.log('scaleDomain=', d.scaleDomain);
+    //    console.log('0a.percentageFormat=', a.percentageFormat);
+    //    console.log('d.scale.text.format=', d.scale.text.format);
+    //   console.log('calDomain=', calDomain);
+    //   console.log('scaleDomain=', d.scaleDomain);
 
       var r = Math.min(wm / 2, hm / 2);
       //console.log('r=',r);
@@ -4128,7 +4128,7 @@ nv.models.dial = function () {
           var line = d3.svg.line.radial()
             .interpolate("basis")
             .tension(0)
-            .radius(r * d.tick.position.end - 2 - (r * d.scale.rim / 2))
+            .radius(r * d.tick.position.minor.end - 2 - (r * d.scale.rim / 2))
             .angle(function (d, i) { return angle(i); });
 
           // var svg = d3.select("body").append("svg")
@@ -4235,18 +4235,18 @@ nv.models.dial = function () {
         var scaleNodes = g.selectAll('.scale').data([d]);
         var gScale = scaleNodes.enter().append('g').attr("class", "scale");
 
-        if (d.set > 0) {
+        //if (d.set > 0) {
           //scale arc thin rim
           var arc = d3.svg.arc()
-            .innerRadius(r * d.tick.position.end - 2)
-            .outerRadius(r * d.tick.position.end + 1)
+            .innerRadius(r * d.tick.position.arc.start)
+            .outerRadius(r * d.tick.position.arc.end)
             .startAngle(range(d)[0] * (Math.PI / 180)) //converting from degs to radians
             .endAngle(range(d)[1] * (Math.PI / 180)); //just radians
 
           gScale.append("path")
             .attr("d", arc)
-			.attr("fill", d.tick.color);
-        }
+			.attr("fill", d.tick.position.arc.color);
+        //}
 
         // var tick0 = 10;
         // var major = a.ticks(tick0);
@@ -4254,20 +4254,29 @@ nv.models.dial = function () {
         // var middle = a.ticks(tick0 * minorTicks).filter(function(d) { return major.indexOf(d) != -1; });
 
         //var tick0 = tick.major===1 ? 10 : tick.major;
-        var major = a.ticks(d.tick.major);
+		var major = a.ticks(d.tick.major);
+		var major0 = a0.ticks(d.tick.major);
         var minor = a.ticks(d.tick.minor * d.tick.major);//.filter(function(d) { return major.indexOf(d) == -1; });
         var middle = a.ticks(d.tick.minor * d.tick.major).filter(function (d) { return major.indexOf(d) != -1; });
-        var majorRange = d.tick.exact ? [major[0], d.scaleDomain[1]] : [major[0], major[major.length - 1]];
+		var majorRange = d.tick.exact ? [major[0], d.scaleDomain[1]] : [major[0], major[major.length - 1]];
+		var major0Range = d.tick.exact ? [major0[0], d.scaleDomain[1]] : [major0[0], major0[major0.length - 1]];
         var scaleDomainUpper = scaleDomain(d)[1];
 
-        // console.log('major=', major);
-        // console.log('majorRange=', majorRange);
+        //  console.log('major =', major );
+    	//  console.log('majorRange=', majorRange);
+        //  console.log('major0 =', major0 );
+		//  console.log('major0Range=', major0Range);
+		 
+		var scalMap = d3.scale.linear()
+            .domain(calDomain)
+			.range(d.scaleDomain);
+		if (!d.scale.text.hide.minmax || !d.scale.text.hide.middle) {
         gScale.selectAll('text.label')
-          .data(d.set > 0 ? majorRange : major)
+          .data(d.scale.text.hide.middle ? majorRange : major)
           .enter().append('svg:text')
           .attr({
-            'x': function (d0) { return Math.cos((-90 + a((d.tick.exact ? d0 / scaleDomainUpper * major[major.length - 1] : d0))) / 180 * Math.PI) * r * d.scale.text.position; },
-            'y': function (d0) { return Math.sin((-90 + a((d.tick.exact ? d0 / scaleDomainUpper * major[major.length - 1] : d0))) / 180 * Math.PI) * r * d.scale.text.position; },
+            'x': function (d0) { return Math.cos((-90 + a((d.tick.exact && d.scale.text.hide.middle ? d0 / scaleDomainUpper * major[major.length - 1] : d0))) / 180 * Math.PI) * r * d.scale.text.position; },
+            'y': function (d0) { return Math.sin((-90 + a((d.tick.exact && d.scale.text.hide.middle ? d0 / scaleDomainUpper * major[major.length - 1] : d0))) / 180 * Math.PI) * r * d.scale.text.position; },
             'dy': function (d0) { return d.scale.text.dy + 'em' },
             'font-family': function (d0) { return d.scale.text.family },
             'font-size': function (d0) { return r * d.scale.text.size * d.scale.text.scale + 'px' },
@@ -4276,51 +4285,58 @@ nv.models.dial = function () {
             'alignment-baseline': 'middle',
             'text-anchor': 'middle',
           })
-          .text(function (d0) { return a.percentageFormat ? d3.format(d.scale.text.format)(d.set > 0 ? (d0 > 0 ? 1 : 0): (d0/d.scaleDomain[1])) : (d.scale.text.format == '' ? a.tickFormat()(d0) : d3.format(d.scale.text.format)(d0)); })
+		  .text(function (d0) { 
+			   d0 = d.tick.exact ? (d.scale.text.hide.middle ? d0 : scalMap(d0)) : d0;
+			   return a.percentageFormat 
+			?  d3.format(d.scale.text.format)(d.scale.text.hide.middle ? (d0 > 0 ? 1 : 0): (d0/d.scaleDomain[1])) 
+			: (d.scale.text.format == '' ? a.tickFormat()(d0) : d3.format(d.scale.text.format)(d0)); })
           ;
+		  }
 
         if (d.tick.mark == 'circle') {
           gScale.selectAll('circle.label')
             .data(minor)
             .enter().append('svg:circle')
             .attr('class', 'mlabel')
-			.attr('fill', d.tick.color)
-            .attr('cx', function (d0) { return Math.cos((-90 + a(d0)) / 180 * Math.PI) * (r * d.tick.position.start); })
-            .attr('cy', function (d0) { return Math.sin((-90 + a(d0)) / 180 * Math.PI) * (r * d.tick.position.start); })
-            .attr('r', d.tick.position.end-d.tick.position.start);
+			.attr('fill', d.tick.position.minor.color)
+            .attr('cx', function (d0) { return Math.cos((-90 + a(d0)) / 180 * Math.PI) * (r * d.tick.position.minor.start); })
+            .attr('cy', function (d0) { return Math.sin((-90 + a(d0)) / 180 * Math.PI) * (r * d.tick.position.minor.start); })
+            .attr('r', d.tick.position.minor.end-d.tick.position.minor.start);
         }
 
         if (d.tick.mark == 'line') {
-          if (d.set > 0) {
+          //if (d.set > 0) {
             gScale.selectAll('line.label')
               .data(minor)
               .enter().append('svg:line')
-              .attr('class', 'mlabel')
-              .attr('stroke', d.tick.color)
-              .attr('x1', function (d0) { return Math.cos((-90 + a(d0)) / 180 * Math.PI) * (r * (d.tick.position.start + 0.01)); })
-              .attr('y1', function (d0) { return Math.sin((-90 + a(d0)) / 180 * Math.PI) * (r * (d.tick.position.start + 0.01)); })
-              .attr('x2', function (d0) { return Math.cos((-90 + a(d0)) / 180 * Math.PI) * (r * d.tick.position.end); })
-              .attr('y2', function (d0) { return Math.sin((-90 + a(d0)) / 180 * Math.PI) * (r * d.tick.position.end); });
+              //.attr('class', 'mlabel')
+              .attr('stroke', d.tick.position.minor.color)
+              .attr('stroke-width', d.tick.position.minor.width)
+              .attr('x1', function (d0) { return Math.cos((-90 + a(d0)) / 180 * Math.PI) * (r * (d.tick.position.minor.start)); })
+              .attr('y1', function (d0) { return Math.sin((-90 + a(d0)) / 180 * Math.PI) * (r * (d.tick.position.minor.start)); })
+              .attr('x2', function (d0) { return Math.cos((-90 + a(d0)) / 180 * Math.PI) * (r * d.tick.position.minor.end); })
+              .attr('y2', function (d0) { return Math.sin((-90 + a(d0)) / 180 * Math.PI) * (r * d.tick.position.minor.end); });
             gScale.selectAll('line.label')
               .data(middle)
               .enter().append('svg:line')
-              .attr('class', 'mlabel')
-              .attr('stroke', d.tick.color)
-              .attr('x1', function (d0) { return Math.cos((-90 + a(d0)) / 180 * Math.PI) * (r * (d.tick.position.start - 0.02)); })
-              .attr('y1', function (d0) { return Math.sin((-90 + a(d0)) / 180 * Math.PI) * (r * (d.tick.position.start - 0.02)); })
-              .attr('x2', function (d0) { return Math.cos((-90 + a(d0)) / 180 * Math.PI) * (r * d.tick.position.end); })
-              .attr('y2', function (d0) { return Math.sin((-90 + a(d0)) / 180 * Math.PI) * (r * d.tick.position.end); });
-          } else {
-            gScale.selectAll('line.label')
-              .data(minor)
-              .enter().append('svg:line')
-			  .attr('class', 'mlabel')
-			  .attr('stroke', d.tick.color)
-              .attr('x1', function (d0) { return Math.cos((-90 + a(d0)) / 180 * Math.PI) * (r * d.tick.position.start); })
-              .attr('y1', function (d0) { return Math.sin((-90 + a(d0)) / 180 * Math.PI) * (r * d.tick.position.start); })
-              .attr('x2', function (d0) { return Math.cos((-90 + a(d0)) / 180 * Math.PI) * (r * d.tick.position.end); })
-              .attr('y2', function (d0) { return Math.sin((-90 + a(d0)) / 180 * Math.PI) * (r * d.tick.position.end); });
-          }
+              //.attr('class', 'mlabel')
+              .attr('stroke', d.tick.position.major.color)
+              .attr('stroke-width', d.tick.position.major.width)
+              .attr('x1', function (d0) { return Math.cos((-90 + a(d0)) / 180 * Math.PI) * (r * (d.tick.position.major.start)); })
+              .attr('y1', function (d0) { return Math.sin((-90 + a(d0)) / 180 * Math.PI) * (r * (d.tick.position.major.start)); })
+              .attr('x2', function (d0) { return Math.cos((-90 + a(d0)) / 180 * Math.PI) * (r * d.tick.position.major.end); })
+              .attr('y2', function (d0) { return Math.sin((-90 + a(d0)) / 180 * Math.PI) * (r * d.tick.position.major.end); });
+        //   } else {
+        //     gScale.selectAll('line.label')
+        //       .data(minor)
+        //       .enter().append('svg:line')
+		// 	  .attr('class', 'mlabel')
+		// 	  .attr('stroke', d.tick.color)
+        //       .attr('x1', function (d0) { return Math.cos((-90 + a(d0)) / 180 * Math.PI) * (r * d.tick.position.start); })
+        //       .attr('y1', function (d0) { return Math.sin((-90 + a(d0)) / 180 * Math.PI) * (r * d.tick.position.start); })
+        //       .attr('x2', function (d0) { return Math.cos((-90 + a(d0)) / 180 * Math.PI) * (r * d.tick.position.end); })
+        //       .attr('y2', function (d0) { return Math.sin((-90 + a(d0)) / 180 * Math.PI) * (r * d.tick.position.end); });
+        //   }
         }
       }
       function drawGlare() {

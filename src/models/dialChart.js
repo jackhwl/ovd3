@@ -1,3 +1,4 @@
+/*global nv, d3*/
 nv.models.dialChart = function() {
     "use strict";
 
@@ -21,7 +22,6 @@ nv.models.dialChart = function() {
         , needle = {type: 1, length: 0.75, width: 0.05}
         , pivot =  function(d) { return d.pivot }
 		, caption =  function(d) { return d.caption }
-		, palette = function(d) { return d.palette }
         , dispatch = d3.dispatch('stateChange', 'changeState','renderEnd')
         ;
 
@@ -37,7 +37,7 @@ nv.models.dialChart = function() {
         renderWatch.reset();
         renderWatch.models(dial);
 
-		selection.each(function(d, i) {
+		selection.each(function(d) {
             var container = d3.select(this);
             nv.utils.initSVG(container);
             //console.log('0width=', width);
@@ -53,8 +53,8 @@ nv.models.dialChart = function() {
 		
 
             var availableWidth = nv.utils.availableWidth(width, container, margin),
-                availableHeight = nv.utils.availableHeight(height, container, margin), //height - margin.top - margin.bottom,
-                that = this;
+                availableHeight = nv.utils.availableHeight(height, container, margin); //height - margin.top - margin.bottom,
+            //    that = this;
             //console.log('0availableWidth=', availableWidth);
             //console.log('0availableWidth=', availableHeight);
 
@@ -132,11 +132,11 @@ nv.models.dialChart = function() {
         tooltip.data(evt).hidden(false);
     });
 
-    dial.dispatch.on('elementMouseout.tooltip', function(evt) {
+    dial.dispatch.on('elementMouseout.tooltip', function() {
         tooltip.hidden(true);
     });
 
-    dial.dispatch.on('elementMousemove.tooltip', function(evt) {
+    dial.dispatch.on('elementMousemove.tooltip', function() {
         tooltip();
     });
     
@@ -166,12 +166,12 @@ nv.models.dialChart = function() {
         ticks:    {get: function(){return ticks;}, set: function(_){ticks=_;}},
         noData:    {get: function(){return noData;}, set: function(_){noData=_;}},
 
-        x:    {get: function(){return x;}, set: function(_){x=_;}},
-        y:    {get: function(){return y;}, set: function(_){y=_;}},
-        r:    {get: function(){return r;}, set: function(_){r=_;}},
-        domain:    {get: function(){return domain;}, set: function(_){domain=_;}},
-        scaleDomain:    {get: function(){return scaleDomain;}, set: function(_){scaleDomain=_;}},
-        range:    {get: function(){return range;}, set: function(_){range=_;}},
+        // x:    {get: function(){return x;}, set: function(_){x=_;}},
+        // y:    {get: function(){return y;}, set: function(_){y=_;}},
+        // r:    {get: function(){return r;}, set: function(_){r=_;}},
+        // domain:    {get: function(){return domain;}, set: function(_){domain=_;}},
+        // scaleDomain:    {get: function(){return scaleDomain;}, set: function(_){scaleDomain=_;}},
+        //range:    {get: function(){return range;}, set: function(_){range=_;}},
         pivot:    {get: function(){return pivot;}, set: function(_){pivot=_;}},
         caption: {get: function(){return caption;}, set: function(_){caption=_;}},
 
@@ -192,17 +192,17 @@ nv.models.dialChart = function() {
           needle.length    = _.length    !== undefined ? _.length    : needle.length;
           needle.width    = _.width    !== undefined ? _.width    : needle.width;
         }},
-        tick:    {get: function(){return tick;}, set: function(_){
-          tick.minor    = _.minor    !== undefined ? _.minor    : tick.minor;
-          tick.major    = _.major    !== undefined ? _.major    : tick.major;
-          tick.mark    = _.mark    !== undefined ? _.mark    : tick.mark;
-          tick.exact    = _.exact    !== undefined ? _.exact    : tick.exact;
-        }},
-        scale:    {get: function(){return scale;}, set: function(_){
-          scale.dial    = _.dial    !== undefined ? _.dial    : scale.dial;
-          scale.text    = _.text    !== undefined ? _.text    : scale.text;
-          scale.rim    = _.rim    !== undefined ? _.rim    : scale.rim;
-        }}
+        // tick:    {get: function(){return tick;}, set: function(_){
+        //   tick.minor    = _.minor    !== undefined ? _.minor    : tick.minor;
+        //   tick.major    = _.major    !== undefined ? _.major    : tick.major;
+        //   tick.mark    = _.mark    !== undefined ? _.mark    : tick.mark;
+        //   tick.exact    = _.exact    !== undefined ? _.exact    : tick.exact;
+        // }},
+        // scale:    {get: function(){return scale;}, set: function(_){
+        //   scale.dial    = _.dial    !== undefined ? _.dial    : scale.dial;
+        //   scale.text    = _.text    !== undefined ? _.text    : scale.text;
+        //   scale.rim    = _.rim    !== undefined ? _.rim    : scale.rim;
+        // }}
     });
 	//console.log('dial=', dial);
     nv.utils.inheritOptions(chart, dial);
