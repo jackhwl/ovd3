@@ -15,6 +15,7 @@ nv.models.multiBarHorizontalChart = function() {
         ;
 
     var margin = {top: 30, right: 20, bottom: 50, left: 60}
+        , link = {url: '', target: '', tooltip: ''}
         , marginTop = null
         , width = null
         , height = null
@@ -326,6 +327,9 @@ nv.models.multiBarHorizontalChart = function() {
             value: chart.y()(evt.data),
             color: evt.color
         };
+		if (chart.link.url!="" && chart.link.tooltip!=""){
+			evt.footer = chart.link.tooltip;
+		}
         tooltip.data(evt).hidden(false);
     });
 
@@ -355,6 +359,8 @@ nv.models.multiBarHorizontalChart = function() {
 
     chart._options = Object.create({}, {
         // simple options, just get/set the necessary values
+        url:        {get: function(){return url;}, set: function(_){url=_;}},
+        urlTooltip: {get: function(){return urlTooltip;}, set: function(_){urlTooltip=_;}},
         width:      {get: function(){return width;}, set: function(_){width=_;}},
         height:     {get: function(){return height;}, set: function(_){height=_;}},
         showLegend: {get: function(){return showLegend;}, set: function(_){showLegend=_;}},
@@ -367,6 +373,11 @@ nv.models.multiBarHorizontalChart = function() {
         defaultState:    {get: function(){return defaultState;}, set: function(_){defaultState=_;}},
         noData:    {get: function(){return noData;}, set: function(_){noData=_;}},
 
+        link: {get: function(){return link;}, set: function(_){
+            link.url = _.url;
+            link.target = _.target;
+            link.tooltip = _.tooltip;
+        }},
         // options that require extra logic in the setter
         margin: {get: function(){return margin;}, set: function(_){
             if (_.top !== undefined) {

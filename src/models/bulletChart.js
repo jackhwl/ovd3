@@ -13,6 +13,7 @@ nv.models.bulletChart = function() {
     var tooltip = nv.models.tooltip();
 
     var orient = 'left' // TODO top & bottom
+        , link = {url: '', target: '', tooltip: ''}
         , reverse = false
         , margin = {top: 5, right: 40, bottom: 20, left: 120}
         , ranges = function(d) { return d.ranges }
@@ -162,6 +163,9 @@ nv.models.bulletChart = function() {
             value: evt.value,
             color: evt.color
         };
+		if (chart.link.url!="" && chart.link.tooltip!=""){
+			evt.footer = chart.link.tooltip;
+        }
         tooltip.data(evt).hidden(false);
     });
 
@@ -185,6 +189,8 @@ nv.models.bulletChart = function() {
 
     chart._options = Object.create({}, {
         // simple options, just get/set the necessary values
+        url:        {get: function(){return url;}, set: function(_){url=_;}},
+        urlTooltip: {get: function(){return urlTooltip;}, set: function(_){urlTooltip=_;}},
         ranges:      {get: function(){return ranges;}, set: function(_){ranges=_;}}, // ranges (bad, satisfactory, good)
         markers:     {get: function(){return markers;}, set: function(_){markers=_;}}, // markers (previous, goal)
         measures: {get: function(){return measures;}, set: function(_){measures=_;}}, // measures (actual, forecast)
@@ -194,6 +200,11 @@ nv.models.bulletChart = function() {
         ticks:    {get: function(){return ticks;}, set: function(_){ticks=_;}},
         noData:    {get: function(){return noData;}, set: function(_){noData=_;}},
 
+        link: {get: function(){return link;}, set: function(_){
+            link.url = _.url;
+            link.target = _.target;
+            link.tooltip = _.tooltip;
+        }},
         // options that require extra logic in the setter
         margin: {get: function(){return margin;}, set: function(_){
             margin.top    = _.top    !== undefined ? _.top    : margin.top;

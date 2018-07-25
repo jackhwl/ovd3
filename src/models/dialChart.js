@@ -13,6 +13,7 @@ nv.models.dialChart = function() {
 	, id = function(d) { return d.id }
 	, ranges = function(d) { return d.ranges }
         , measures = function(d) { return d.measures }
+        , link = {url: '', target: '', tooltip: ''}
         , width = null
         , height = null
         , tickFormat = null
@@ -129,6 +130,9 @@ nv.models.dialChart = function() {
             value: evt.value,
             color: evt.color
         };
+		if (chart.link.url!="" && chart.link.tooltip!=""){
+			evt.footer = chart.link.tooltip;
+		}
         tooltip.data(evt).hidden(false);
     });
 
@@ -180,6 +184,11 @@ nv.models.dialChart = function() {
             duration = _;
             renderWatch.reset(duration);
             dial.duration(duration);
+        }},
+        link: {get: function(){return link;}, set: function(_){
+            link.url = _.url;
+            link.target = _.target;
+            link.tooltip = _.tooltip;
         }},
         margin: {get: function(){return margin;}, set: function(_){
             margin.top    = _.top    !== undefined ? _.top    : margin.top;

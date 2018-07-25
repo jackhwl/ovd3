@@ -13,6 +13,7 @@ nv.models.pieChart = function() {
         , marginTop = null
         , width = null
         , height = null
+        , link = {url: '', target: '', tooltip: ''}
         , showTooltipPercent = false
         , showLegend = true
         , legendPosition = "top"
@@ -197,6 +198,9 @@ nv.models.pieChart = function() {
             color: evt.color,
             percent: evt.percent
         };
+		if (chart.link.url!="" && chart.link.tooltip!=""){
+			evt.footer = chart.link.tooltip;
+		}
         if (!showTooltipPercent) {
             delete evt.percent;
             delete evt.series.percent;
@@ -244,6 +248,11 @@ nv.models.pieChart = function() {
             duration = _;
             renderWatch.reset(duration);
             pie.duration(duration);
+        }},
+        link: {get: function(){return link;}, set: function(_){
+            link.url = _.url;
+            link.target = _.target;
+            link.tooltip = _.tooltip;
         }},
         margin: {get: function(){return margin;}, set: function(_){
             if (_.top !== undefined) {
