@@ -198,8 +198,8 @@ nv.models.pieChart = function() {
             color: evt.color,
             percent: evt.percent
         };
-		if (chart.link.url!="" && chart.link.tooltip!=""){
-			evt.footer = chart.link.tooltip;
+		if (link.url!="" && link.tooltip!=""){
+			evt.footer = link.tooltip;
 		}
         if (!showTooltipPercent) {
             delete evt.percent;

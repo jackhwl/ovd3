@@ -163,8 +163,8 @@ nv.models.bulletChart = function() {
             value: evt.value,
             color: evt.color
         };
-		if (chart.link.url!="" && chart.link.tooltip!=""){
-			evt.footer = chart.link.tooltip;
+		if (link.url!="" && link.tooltip!=""){
+			evt.footer = link.tooltip;
         }
         tooltip.data(evt).hidden(false);
     });
