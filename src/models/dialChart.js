@@ -28,7 +28,10 @@ nv.models.dialChart = function() {
 
     tooltip
         .duration(0)
-        .headerEnabled(false);
+        .headerEnabled(false)
+        .valueFormatter(function(d, i) {
+            return dial.valueFormat()(d, i);
+        });
 
 		var renderWatch = nv.utils.renderWatch(dispatch);
 

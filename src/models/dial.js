@@ -18,6 +18,7 @@ nv.models.dial = function () {
     , height = 30
     //, container = null
     , tickFormat = null
+    , valueFormat = d3.format(',.2f')
     , color = nv.utils.getColor(['#1f77b4'])
     //, defaultRangeLabels = ["Maximum", "Mean", "Minimum"]
     //, legacyRangeClassNames = ["Max", "Avg", "Min"]
@@ -603,13 +604,16 @@ nv.models.dial = function () {
         g.selectAll('text')
           .data(d.caption)
           .enter().append('svg:text')
-          .text(function (d0) { return nv.utils.isNumber(d0.text) ? d3.format(d0.format)(a.measurePercentageFormat ? d0.text / d.scaleDomain[1] : d0.text) : d0.text })
+          .text(function (d0) { return isNumeric(d0.text) ? d3.format(d0.format)(a.measurePercentageFormat ? d0.text / d.scaleDomain[1] : d0.text) : d0.text })
           .attr({
             'dx': function (d) { return d.dx + 'em' },
             'dy': function (d) { return d.dy + 'em' },
             'style': function (d) { return 'font-family: ' + d.family + ';font-size: ' + (r * d.size * d.scale) + 'px;font-weight: ' + d.weight + ';fill: ' + d.color + ';alignment-baseline: middle;text-anchor: middle;' }
           })
           ;
+      }
+      function isNumeric(n) {
+        return !isNaN(parseFloat(n)) && isFinite(n);
       }
 
     });
@@ -634,7 +638,8 @@ nv.models.dial = function () {
     width: { get: function () { return width; }, set: function (_) { width = _; } },
     height: { get: function () { return height; }, set: function (_) { height = _; } },
     tickFormat: { get: function () { return tickFormat; }, set: function (_) { tickFormat = _; } },
-	duration: { get: function () { return duration; }, set: function (_) { duration = _; 
+    valueFormat:    {get: function(){return valueFormat;}, set: function(_){valueFormat=_;}},
+    duration: { get: function () { return duration; }, set: function (_) { duration = _; 
 		renderWatch.reset(duration);
 	} },
 
