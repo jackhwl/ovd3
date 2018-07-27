@@ -50,7 +50,7 @@ nv.models.bulletChart = function() {
             } else {
                 container.selectAll('.nv-noData').remove();
             }
-
+        
             var rangez = ranges.call(this, d, i).slice().sort(d3.descending),
                 markerz = markers.call(this, d, i).slice().sort(d3.descending),
                 measurez = measures.call(this, d, i).slice().sort(d3.descending);

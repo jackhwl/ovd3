@@ -27,7 +27,7 @@ nv.models.bullet = function() {
         , container = null
         , tickFormat = null
         , color = nv.utils.getColor(['#1f77b4'])
-        , dispatch = d3.dispatch('elementMouseover', 'elementMouseout', 'elementMousemove')
+        , dispatch = d3.dispatch('elementClick', 'elementMouseover', 'elementMouseout', 'elementMousemove')
         , defaultRangeLabels = ["Maximum", "Mean", "Minimum"]
         , legacyRangeClassNames = ["Max", "Avg", "Min"]
         , duration = 1000
@@ -127,6 +127,16 @@ nv.models.bullet = function() {
                 .style('fill', color)
                 .attr('height', availableHeight / 3)
                 .attr('y', availableHeight / 3)
+                .on('click', function(d, i) {
+                    var element = this;
+                    dispatch.elementClick({
+                        data: d,
+                        index: i,
+                        color: d3.select(this).style("fill"),
+                        event: d3.event,
+                        element: element
+                    })
+                })             
                 .on('mouseover', function() {
                     dispatch.elementMouseover({
                         value: measurez[0],
@@ -243,6 +253,16 @@ nv.models.bullet = function() {
               .attr('x2', function(d) { return x1(d.value) });
 
             wrap.selectAll('.nv-range')
+                .on('click', function(d, i) {
+                    var element = this;
+                    dispatch.elementClick({
+                        data: d,
+                        index: i,
+                        color: d3.select(this).style("fill"),
+                        event: d3.event,
+                        element: element
+                    })
+                })             
                 .on('mouseover', function(d,i) {
                     var label = rangeLabelz[i] || defaultRangeLabels[i];
                     dispatch.elementMouseover({
